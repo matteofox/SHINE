@@ -80,7 +80,7 @@ def Make_Im_SHINE(cube, variance, labelsCube, Id, extcub=0, extvar=0, extlabels=
             headout[key] = hduhead[key]
         
         headout['BUNIT'] = '1e-18 erg cm^-2 s^-1 arcsec^-2'
-        headout['HISTORY'] = '2D image from MUBELS.py extraction'
+        headout['HISTORY'] = '2D image from SHINE extraction'
         
         #Paste the header
         hduout_img.header = headout
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description=textwrap.dedent('''\
-    Make surface brightness images of 3D data using the output of MUBELS.py 
+    Make surface brightness images of 3D data using the output of SHINE 
     Units of output image 1e-18 erg s^-1 cm^-2 arcsec^-1
     --------------------------------
     Authors:  Davide Tornotti, Matteo Fossati
