@@ -5,13 +5,19 @@ SHINE = Spectral Highlighting and Identification of Emission
 This code identifies connected structures above a given SNR threshold in 
 2D/3D datasets.
 
-For more info, please call the codes with the -h option.
-
-A more detailed documentation is forthcoming.
-
 To report bugs or suggest new features please write to:
 
 matteo.fossati@unimib.it and d.tornotti@campus.unimib.it
+
+REQUIREMENTS
+
+The code requires the numpy, scipy, astropy and cc3d packages.
+
+USAGE
+
+For more info, please call the codes with the -h option.
+
+A more detailed documentation is forthcoming.
 
 
 LICENSE
