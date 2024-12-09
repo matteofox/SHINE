@@ -1,6 +1,6 @@
 # SHINE
 
-SHINE = Spectral Highlighting and Identification of Emission
+SHINE: Spectral Highlighting and Identification of Emission
 
 This code identifies connected structures above a given SNR threshold in 
 2D/3D datasets.
