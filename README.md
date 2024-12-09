@@ -6,11 +6,12 @@ This code identifies connected structures above a given SNR threshold in
 2D/3D datasets.
 
 For more info, please call the codes with the -h option.
+
 A more detailed documentation is forthcoming.
 
 To report bugs or suggest new features please write to:
-matteo.fossati@unimib.it
-d.tornotti@campus.unimib.it
+
+matteo.fossati@unimib.it and d.tornotti@campus.unimib.it
 
 
 LICENSE
