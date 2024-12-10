@@ -331,20 +331,6 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
                   mindz=1, maxdz=200, minvox = 1, minarea=3, outdir='./', \
                   writelabels=False, writesmcube=False, writesmvar=False, writesmsnrcube=False):
 
-    """
-    Input:
-    
-    - cube:         the selected cube (3D np.array);
-    - variance:     the associated variance cube (3D np.array);
-    - mask2D:       the 2D mask of continuum sources (2D p.array);
-    - SNthreshold:  the S/N threshold for the extraction (float);
-    - spatsig:     the spatial kernel for the gaussian filter (int);
-    - specsig;     the spectral kernel for the gaussian filter (int);
-    
-    Output:
-    - labels_out:   the extracted labels (3D np.array);
-    
-    """
     
     hducube = fits.open(fcube)
     hduvar = fits.open(fvariance)
@@ -476,38 +462,38 @@ if __name__ == "__main__":
     
     grpinp.add_argument('cube',        help='Path of the input datacube. Expected to be in extension 0, unless extcub is defined.')
     grpinp.add_argument('varcube',     help='Path of the variance cube. Expected to be in extension 0, unless extvar is defined.')
-    grpinp.add_argument('--mask2d',    default= None,  help='Path of an optional two dimensional mask to be applied along the wave axis')
-    grpinp.add_argument('--mask2dpost',default= None,  help='Path of an optional two dimensional mask to be applied after the smoothing along the wave axis')
-    grpinp.add_argument('--mask3d',    default= None,  help='Path of an optional three dimesional mask. NOT IMPLEMENTED YET')
-    grpinp.add_argument('--extcub',    default= 0, type=int, help='Path of an optional two dimensional mask to be applied along the wave axis')
-    grpinp.add_argument('--extvar',    default= 0, type=int, help='Path of an optional three dimesional mask')
+    grpinp.add_argument('--mask2d',    default= None,  help='Path of an optional two dimensional mask to be applied along the wave axis.')
+    grpinp.add_argument('--mask2dpost',default= None,  help='Path of an optional two dimensional mask to be applied after the smoothing along the wave axis.')
+    grpinp.add_argument('--mask3d',    default= None,  help='Path of an optional three dimesional mask. NOT IMPLEMENTED YET.')
+    grpinp.add_argument('--extcub',    default= 0, type=int, help='Specifies the HDU index in the FITS file cube to use for the data cube extraction.')
+    grpinp.add_argument('--extvar',    default= 0, type=int, help='Specifies the HDU index in the FITS file variance to use for the cube extraction.')
     
     
     grpext = parser.add_argument_group('Extraction arguments')
     
-    grpext.add_argument('--snthresh',     default= 2.,     type=float, help='The SNR of voxels to be included in the extraction')
+    grpext.add_argument('--snthresh',     default= 2.,     type=float, help='The SNR of voxels to be included in the extraction.')
     grpext.add_argument('--spatsmooth',   default= 0.,     type=float, help='Gaussian Sigma of the spatial convolution kernel applied in X and Y.')
-    grpext.add_argument('--spatsmoothX',  default= None,   help='Gaussian Sigma of the spatial convolution kernel applied in X. If set, this has priority over spatsmooth')
-    grpext.add_argument('--spatsmoothY',  default= None,   help='Gaussian Sigma of the spatial convolution kernel applied in Y. If set, this has priority over spatsmooth')
-    grpext.add_argument('--specsmooth',   default= 0.,     type=float, help='Gaussian Sigma of the spectra convolution kernel applied in Lambda')   
-    grpext.add_argument('--usefftconv',   default= False,  type=bool, help='If True, use fft for convolution rather than the direct algorithm')   
-    grpext.add_argument('--connectivity', default= 26,     type=int, help='Voxel connectivity scheme to be used. Only 4,8 (2D) and 26, 18, and 6 (3D) are allowed')   
-    grpext.add_argument('--maskspedge',   default= None,   type=int, help='TBD')   
+    grpext.add_argument('--spatsmoothX',  default= None,   help='Gaussian Sigma of the spatial convolution kernel applied in X. If set, this has priority over spatsmooth.')
+    grpext.add_argument('--spatsmoothY',  default= None,   help='Gaussian Sigma of the spatial convolution kernel applied in Y. If set, this has priority over spatsmooth.')
+    grpext.add_argument('--specsmooth',   default= 0.,     type=float, help='Gaussian Sigma of the spectra convolution kernel applied in Lambda. NOT IMPLEMENTED YET.')   
+    grpext.add_argument('--usefftconv',   default= False,  type=bool, help='If True, use fft for convolution rather than the direct algorithm.')   
+    grpext.add_argument('--connectivity', default= 26,     type=int, help='Voxel connectivity scheme to be used. Only 4,8 (2D) and 26, 18, and 6 (3D) are allowed.')   
+    grpext.add_argument('--maskspedge',   default= None,   type=int, help='Determines how much (in pixels) to expand the mask around the edges of the cube/image.')   
     
     grpcln = parser.add_argument_group('Cleaning arguments')
     
-    grpcln.add_argument('--minvox',    default= 1,        type=int, help='Minimum number of connected voxels for a source to be in the final catalogue')
-    grpcln.add_argument('--mindz',     default= 1,        type=int, help='Minimum number of connected voxels in spectral direction for a source to be in the final catalogue')
-    grpcln.add_argument('--maxdz',     default= 200,      type=int, help='Maximum number of connected voxels in spectral direction for a source to be in the final catalogue')
-    grpcln.add_argument('--minarea',   default= 3,        type=int, help='Minimum number of connected voxels in projected spatial direction for a source to be in the final catalogue')
+    grpcln.add_argument('--minvox',    default= 1,        type=int, help='Minimum number of connected voxels for a source to be in the final catalogue.')
+    grpcln.add_argument('--mindz',     default= 1,        type=int, help='Minimum number of connected voxels in spectral direction for a source to be in the final catalogue.')
+    grpcln.add_argument('--maxdz',     default= 200,      type=int, help='Maximum number of connected voxels in spectral direction for a source to be in the final catalogue.')
+    grpcln.add_argument('--minarea',   default= 3,        type=int, help='Minimum number of connected voxels in projected spatial direction for a source to be in the final catalogue.')
     
     grpout = parser.add_argument_group('Output control arguments')
     
-    grpout.add_argument('--outdir',              default='./',        help='Output directory path')
-    grpout.add_argument('--writelabels',         action='store_true', help='If set, write labels cube')
-    grpout.add_argument('--writesmcube',         action='store_true', help='If set, write the smoothed cube')
-    grpout.add_argument('--writesmvar',          action='store_true', help='If set, write the smoothed variance')
-    grpout.add_argument('--writesmsnrcube',      action='store_true', help='If set, write the S/N smoothed cube')
+    grpout.add_argument('--outdir',              default='./',        help='Output directory path.')
+    grpout.add_argument('--writelabels',         action='store_true', help='If set, write labels cube.')
+    grpout.add_argument('--writesmcube',         action='store_true', help='If set, write the smoothed cube.')
+    grpout.add_argument('--writesmvar',          action='store_true', help='If set, write the smoothed variance.')
+    grpout.add_argument('--writesmsnrcube',      action='store_true', help='If set, write the S/N smoothed cube.')
     
     #...and more to come
         
@@ -521,8 +507,8 @@ if __name__ == "__main__":
     if args.spatsmoothY is not None:
         spatsig[1] = args.spatsmoothY
     
-    if args.maskspedge==None:
-        args.maskspedge=int(5*spatsig[0])
+    #if args.maskspedge==None:
+    #    args.maskspedge=int(5*spatsig[0])
     
     runextraction(args.cube, args.varcube, \
     fmask2D = args.mask2d, fmask2Dpost = args.mask2dpost, fmask3D = args.mask3d, extcub=args.extcub, extvar=args.extvar, \
