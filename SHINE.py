@@ -479,7 +479,7 @@ if __name__ == "__main__":
     grpext.add_argument('--usefftconv',   default= False,  type=bool, help='If True, use fft for convolution rather than the direct algorithm.')   
     grpext.add_argument('--connectivity', default= 26,     type=int, help='Voxel connectivity scheme to be used. Only 4,8 (2D) and 26, 18, and 6 (3D) are allowed.')   
     grpext.add_argument('--maskspedge',   default= None,   type=int, help='Determines how much (in pixels) to expand the mask around the edges of the cube/image.')   
-    
+   
     grpcln = parser.add_argument_group('Cleaning arguments')
     
     grpcln.add_argument('--minvox',    default= 1,        type=int, help='Minimum number of connected voxels for a source to be in the final catalogue.')
