@@ -53,6 +53,6 @@ htmlhelp_basename = 'shinedoc'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', 'https://docs.python.org/3/objects.inv'),
-    'numpy': ('https://numpy.org/doc/stable', 'https://numpy.org/doc/stable/objects.inv'),
+    'python': ('https://docs.python.org/3', None),  # Python documentation
+    'numpy': ('https://numpy.org/doc/stable', None),  # NumPy documentation
 }
