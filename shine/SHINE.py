@@ -445,8 +445,7 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
         hduout.writeto(outdir+'/SNRcubeF_out.fits', overwrite=True)
         
 
-if __name__ == "__main__":
-   
+def main():
    
     parser = argparse.ArgumentParser(
     
@@ -517,5 +516,7 @@ if __name__ == "__main__":
     outdir=args.outdir, writelabels=args.writelabels, writesmcube=args.writesmcube, \
     writesmvar=args.writesmvar, writesmsnrcube=args.writesmsnrcube)
 
-
+if __name__ == "__main__":
+   
+   main()
 

@@ -93,8 +93,7 @@ def Make_Im_SHINE(cube, variance, labelsCube, Id, extcub=0, extvar=0, extlabels=
     return image, varimage
 
 
-if __name__ == "__main__":
-   
+def main():
    
     parser = argparse.ArgumentParser(
     
@@ -134,3 +133,5 @@ if __name__ == "__main__":
     Make_Im_SHINE(args.cube, args.varcube, args.labelsCube, args.Id, extcub=args.extcub, extvar=args.extvar, extlabels=args.extlabels, outdir=args.outdir, writeout = args.writeout)
     
     
+if __name__ == "__main__":
+    main()

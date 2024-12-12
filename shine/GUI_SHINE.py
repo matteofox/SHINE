@@ -284,8 +284,12 @@ class GUI_SHINE:
             # Close the GUI
             self.root.destroy()
 
+def main()
 
-if __name__ == "__main__":
     root = tk.Tk()
     app = GUI_SHINE(root)
     root.mainloop()
+    
+if __name__ == "__main__":
+
+    main()   
