@@ -52,4 +52,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 htmlhelp_basename = 'shinedoc'
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', 'https://docs.python.org/3/objects.inv'),
+    'numpy': ('https://numpy.org/doc/stable', 'https://numpy.org/doc/stable/objects.inv'),
+}
