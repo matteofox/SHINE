@@ -7,6 +7,7 @@ setup(
     install_requires=[         # List of dependencies
         'numpy',  # Example dependency
         'astropy',
+        'scipy',
         'connected-components-3d',  # Example dependency
     ],
     classifiers=[
