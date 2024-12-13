@@ -95,7 +95,7 @@ def filter_cube(cube, spatsig=2, specsig=0, isvar=False, usefft=False):
     return SMcube
 
 
-def find_nan_edges(cube, extend=0):
+def find_nan_edges(cube, extend=None):
     # If there are values identically zero, set them to NaN
     cube[cube == 0] = np.nan
 
@@ -103,7 +103,8 @@ def find_nan_edges(cube, extend=0):
     mask = np.all(np.isnan(cube), axis=0)
 
     # Extend the mask if requested
-    if extend > 0:
+    if extend is not None:
+      if extend > 0:
         mask = maximum_filter(mask, size=extend)
 
     return mask
