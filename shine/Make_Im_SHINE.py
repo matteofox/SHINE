@@ -125,7 +125,9 @@ def main():
     grpout = parser.add_argument_group('Output control arguments')
     
     grpout.add_argument('--outdir',        default='./',        help='Output directory path')
-    grpout.add_argument('--writeout',      action='store_true', help='If set, write flux image and associated variance image')
+    
+    #Not sure it is a use case to run the code from the command line without writing the output. Forcing True
+    #grpout.add_argument('--writeout',      action='store_true', help='If set, write flux image and associated variance image')
     
     #Parse arguments  
     args = parser.parse_args()   
@@ -136,7 +138,7 @@ def main():
        print('All the extracted labels will be collapsed in the image')
   
       
-    Make_Im_SHINE(args.cube, args.varcube, args.labelsCube, args.Id, extcub=args.extcub, extvar=args.extvar, extlabels=args.extlabels, outdir=args.outdir, writeout = args.writeout)
+    Make_Im_SHINE(args.cube, args.varcube, args.labelsCube, args.Id, extcub=args.extcub, extvar=args.extvar, extlabels=args.extlabels, outdir=args.outdir, writeout = True)
     
     
 if __name__ == "__main__":
