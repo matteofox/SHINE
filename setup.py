@@ -25,8 +25,8 @@ setup(
     },
     author='Matteo Fossati, Davide Tornotti',  # Replace with your name
     author_email='matteo.fossati@unimib.it',  # Replace with your email
-    description='TBD',
-    long_description=open('README.md').read(),  # Optional: use a README file for long description
+    description='Spectral Highlighting and Identification of Emission identifies connected structures in 2D and 3D datasets.',
+    long_description=open('README.rst').read(),  # Optional: use a README file for long description
     long_description_content_type='text/markdown',  # Assuming README.md is in markdown format
     url='https://github.com/matteofox/SHINE',  # Replace with your project URL
 )
