@@ -46,7 +46,10 @@ def Make_Im_SHINE(cube, variance, labelsCube, Id, extcub=0, extvar=0, extlabels=
     except:
       deltal  = hduhead['CDELT3']
       
-    pixsize = np.abs(hduhead['CDELT2'])*3600 #assuming the same for CDELT1 (transform to arcsec)
+    try:
+      pixsize = np.abs(np.sqrt(hduhead['CD1_1']**2+hduhead['CD1_2']**2))*3600
+    except:  
+      pixsize = np.abs(hduhead['CDELT1'])*3600 #assuming the same for X and Y (transform to arcsec)
     
     keepvox = (labels==Id[0])
     if len(Id)>1:
@@ -77,8 +80,11 @@ def Make_Im_SHINE(cube, variance, labelsCube, Id, extcub=0, extvar=0, extlabels=
         
         copykeys = ['OBJECT','WCSAXES','CRPIX1','CRPIX2','CDELT1','CDELT2','CUNIT1','CUNIT2','CTYPE1','CTYPE2','CRVAL1','CRVAL2','LONPOLE','LATPOLE','MJDREF','RADESYS']
         for key in copykeys:
-            headout[key] = hduhead[key]
-        
+            try:
+              headout[key] = hduhead[key]
+            except:
+              pass
+            
         headout['BUNIT'] = '1e-18 erg cm^-2 s^-1 arcsec^-2'
         headout['HISTORY'] = '2D image from SHINE extraction'
         
