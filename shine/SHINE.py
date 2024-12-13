@@ -119,7 +119,8 @@ def threshold_cube(cube, var, threshold=0.5, maskedge=0, edge_ima=None):
     snrcube[np.logical_not(np.isfinite(snrcube))] = 0
 
     # Apply edge masking if requested
-    if maskedge > 0:
+    if maskedge is not None:
+      if maskedge > 0:
         snrcube[:, :maskedge, :] = 0
         snrcube[:, :, :maskedge] = 0
         snrcube[:, -maskedge:, :] = 0
