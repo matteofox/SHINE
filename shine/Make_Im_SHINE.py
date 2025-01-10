@@ -36,15 +36,12 @@ def Make_Im_SHINE(cube, labelsCube=None, Id=[-1], extcub=0, extlabels=0, itype='
         deltal  = hduhead['CD3_3']
     except:
         deltal  = hduhead['CDELT3']
-    
-    try:
-        deltatheta = hduhead['CD2_2']
-    except:
-        deltatheta = hduhead['CDELT2']
-    
-    #recover pixsize
-    pixsize = np.abs(deltatheta)*3600 #assuming the same for CDELT1 (transform to arcsec)
 
+    try:
+      pixsize = np.abs(np.sqrt(hduhead['CD1_1']**2+hduhead['CD1_2']**2))*3600
+    except:  
+      pixsize = np.abs(hduhead['CDELT1'])*3600 #assuming the same for X and Y (transform to arcsec)
+        
     #read the data
     cube   = np.nan_to_num(hducube[extcub].data)
     #-------------------------------------------------------------------- 
