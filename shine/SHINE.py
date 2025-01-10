@@ -18,6 +18,8 @@ from astropy.utils.exceptions import AstropyWarning
 from scipy.ndimage import maximum_filter
 from astropy.convolution import convolve, convolve_fft
 
+from pathlib import Path
+
 import argparse, textwrap
 
 import warnings
@@ -104,8 +106,8 @@ def find_nan_edges(cube, extend=None):
 
     # Extend the mask if requested
     if extend is not None:
-      if extend > 0:
-        mask = maximum_filter(mask, size=extend)
+        if extend > 0:
+            mask = maximum_filter(mask, size=extend)
 
     return mask
     
@@ -169,6 +171,78 @@ def masking_nan(cube, mask):
         cube[i, bad] = np.nan
 
     return cube
+
+
+
+def subcube(cube=None, datahead=None, filename=None, pathcube=None, extcube=0, outdir='./', zmin=None, zmax=None, lmin=None, lmax=None, writesubcube=False, addname=''):
+    
+     
+    #----------------------- PRELIMINARY CHECKS ----------------------------
+    #if set the patcube read the data from here 
+    if pathcube is not None:
+        
+        cube     = fits.open(pathcube)[extcube].data
+        datahead = fits.open(pathcube)[extcube].header
+        filename = Path(pathcube).stem
+    else:
+        #if the pathcube is not provided check the data, datahead, filename
+        if cube is None or datahead is None or filename is None:
+            raise ValueError("Error: please provide the pathcube or data, header and filename.")
+    #-----------------------------------------------------------------------
+        
+    
+    #----------------------- SELECT THE CUBE -------------------------------
+    # assuming zmin starts from 0 and/or lmin from the minimum wavelength
+    
+    # Build wavelengths 
+    try:
+        dlam = datahead['CD3_3']
+    except:
+        dlam = datahead['CDELT3'] 
+    
+    wave = datahead['CRVAL3'] + np.arange(datahead['NAXIS3']) * dlam
+    
+    newhead = datahead.copy()
+    
+    # Extract the subcube based on zmin and zmax
+    if zmin and zmax is not None:
+        subcube = cube[zmin:zmax, :, :]
+    
+    # If lmin and lmax are provided, calculate zmin and zmax
+    elif lmin and lmax is not None:
+        
+        if lmin < min(wave):
+            lmin = min(wave)
+        if lmax > max(wave):
+            lmax = max(wave)
+            
+        zmin = int(np.searchsorted(wave, lmin, side='right')-1)
+        zmax = int(np.searchsorted(wave, lmax, side='right'))
+        
+        subcube = cube[zmin:zmax, :, :]
+        
+    else: 
+        print('... Please provide zmin/zmax or lmin/lmax')
+    #------------------------------------------------------------------------
+    
+    
+    
+    #----------------------- SAVE THE OUTPUT ------------------------------- 
+    print(f'... Selecting the cube between {zmin} and {zmax}')
+    
+    #update the header
+    newhead['NAXIS3'] = zmax - zmin
+    newhead['CRVAL3'] = wave[zmin]
+    newhead['HISTORY'] = f'Cube selected between layer {zmin}-{zmax} using SHINE\'s subcube routine'
+    
+    if writesubcube:
+        hduout = fits.PrimaryHDU(subcube, header = newhead)
+        hduout.writeto(outdir+f'{filename}.SUBCUBE{addname}.fits', overwrite=True)
+    #------------------------------------------------------------------------
+
+        
+    return subcube, newhead
+
 
 
 
@@ -284,7 +358,7 @@ def add_wcs_struct(catalogue, datahead):
         except:
             dlam = datahead['CDELT3'] 
                      
-        wave = datahead['CRVAL3']+ (np.arange(datahead['NAXIS3'])-datahead['CRPIX3'])*dlam
+        wave = datahead['CRVAL3']+ np.arange(datahead['NAXIS3'])*dlam
         
         Lambda = np.interp(catalogue['Zcent'], np.arange(len(wave)), wave)
     except:
@@ -329,17 +403,20 @@ def compute_photometry(catalogue, cube, var, labelsCube):
 
 def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None, extcub=0, extvar=0, \
                   SNthreshold=2, maskspedge=0, spatsig=2, specsig=0, usefft=False, connectivity=26, \
-                  mindz=1, maxdz=200, minvox = 1, minarea=3, outdir='./', \
-                  writelabels=False, writesmcube=False, writesmvar=False, writesmsnrcube=False):
+                  mindz=1, maxdz=200, minvox = 1, minarea=3, zmin=None, zmax=None, lmin=None, lmax=None, outdir='./', \
+                  writelabels=False, writesmcube=False, writesmvar=False, writesmsnrcube=False, writesubcube=False):
 
     
-    hducube = fits.open(fcube)
-    hduvar = fits.open(fvariance)
-    hduhead = hducube[extcub].header
+    hducube      = fits.open(fcube)
+    hduvar       = fits.open(fvariance)
+    hduhead      = hducube[extcub].header
+    cubefilename = Path(fcube).stem
+    varfilename  = Path(fvariance).stem
     
     #find edges
     edge_ima        = find_nan_edges(hducube[extcub].data, extend=maskspedge)
        
+          
     if fmask2D is not None:
         mask2D = fits.open(fmask2D)[0].data
         cube = masking_nan(hducube[extcub].data,   mask2D)
@@ -349,6 +426,21 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
         cube = hducube[extcub].data
         var  = hduvar[extvar].data        
         
+    
+    #******************************************************************************************
+    #step 0: create a subcube (in wavelength) of the original cube, if necessary
+    #******************************************************************************************
+    if zmin and zmax is not None:
+        cube, newhduhead  = subcube(cube=cube, datahead=hduhead, filename=cubefilename, outdir=outdir, zmin=zmin, zmax=zmax, writesubcube=writesubcube)
+        var, _   = subcube(cube=var,  datahead=hduhead, filename=varfilename,  outdir=outdir, zmin=zmin, zmax=zmax, writesubcube=writesubcube)
+    elif lmin and lmax is not None:
+        cube, newhduhead = subcube(cube=cube, datahead=hduhead, filename=cubefilename, outdir=outdir, lmin=lmin, lmax=lmax, writesubcube=writesubcube)
+        var, _  = subcube(cube=var, datahead=hduhead, filename=varfilename, outdir=outdir, lmin=lmin, lmax=lmax, writesubcube=writesubcube)
+    else:
+        newhduhead = hduhead
+        print('... Use the entire cube (without any selection in z direction)')
+    
+    
     #******************************************************************************************
     #step 1: filtering the cube and the associated variance using a Gaussian kernel
     #******************************************************************************************
@@ -397,7 +489,7 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
     #*********************************************************************************************
     #Step 7: add WCS in catalogue
     #*********************************************************************************************
-    catalogue = add_wcs_struct(catalogue, hduhead)
+    catalogue = add_wcs_struct(catalogue, newhduhead)
     
     
     #*********************************************************************************************
@@ -409,21 +501,30 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
     #*********************************************************************************************
     #Write catalogue
     #*********************************************************************************************
-    catalogue.write(outdir+'/CATALOGUE_out.fits', overwrite=True)
+    catalogue.write(outdir+f'/{cubefilename}.CATALOGUE_out.fits', overwrite=True)
 
     
     #*********************************************************************************************
     #Step 9: dump to the disk the requested products (note that the catalogue is always written)
     #*********************************************************************************************
     #Prepare header
-    headout = hduhead
+    headout = newhduhead
     
-    if len(spatsig)==1:
-        headout['XSMOOTH'] = spatsig
-        headout['YSMOOTH'] = spatsig
-    else:
-        headout['XSMOOTH'] = spatsig[0]
-        headout['YSMOOTH'] = spatsig[1]
+    
+    try:
+        dummy = len(spatsig)
+    except:
+        spatsig = [spatsig]
+
+    if len(spatsig) == 1:
+        ysig = spatsig[0]
+        xsig = spatsig[0]
+    elif len(spatsig) > 1 and len(spatsig) <= 2:
+        ysig = spatsig[1]
+        xsig = spatsig[0]
+    
+    headout['XSMOOTH'] = xsig
+    headout['YSMOOTH'] = ysig
        
     headout['ZSMOOTH'] = specsig
     headout['SNTHRES'] = SNthreshold
@@ -431,19 +532,19 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
     
     if writelabels:
         hduout = fits.PrimaryHDU(labels_cln, header = headout)
-        hduout.writeto(outdir+'/LABELS_out.fits', overwrite=True)
+        hduout.writeto(outdir+f'/{cubefilename}.LABELS_out.fits', overwrite=True)
             
     if writesmcube:
         hduout = fits.PrimaryHDU(cubeF, header = headout)
-        hduout.writeto(outdir+'/CubeF_out.fits', overwrite=True)
+        hduout.writeto(outdir+f'/{cubefilename}.FILTER_out.fits', overwrite=True)
     
     if writesmvar:
         hduout = fits.PrimaryHDU(varF, header = headout)
-        hduout.writeto(outdir+'/varF_out.fits', overwrite=True)
+        hduout.writeto(outdir+f'/{varfilename}.FILTER_out.fits', overwrite=True)
     
     if writesmsnrcube:
         hduout = fits.PrimaryHDU(snrcube, header = headout)
-        hduout.writeto(outdir+'/SNRcubeF_out.fits', overwrite=True)
+        hduout.writeto(outdir+f'/{cubefilename}.SNRcubeF_out.fits', overwrite=True)
         
 
 def main():
@@ -467,6 +568,10 @@ def main():
     grpinp.add_argument('--mask3d',    default= None,  help='Path of an optional three dimesional mask. NOT IMPLEMENTED YET.')
     grpinp.add_argument('--extcub',    default= 0, type=int, help='Specifies the HDU index in the FITS file cube to use for the data cube extraction.')
     grpinp.add_argument('--extvar',    default= 0, type=int, help='Specifies the HDU index in the FITS file variance to use for the cube extraction.')
+    grpinp.add_argument('--zmin',      default= None, type=int, help='If selecting the cube and the variance: initial pixel in z direction (from 0).')
+    grpinp.add_argument('--zmax',      default= None, type=int, help='If selecting the cube and the variance: final pixel in z direction (from 0).')
+    grpinp.add_argument('--lmin',      default= None, type=float, help='If selecting the cube and the variance: initial wavelength in z direction (in Angstrom).')
+    grpinp.add_argument('--lmax',      default= None, type=float, help='If selecting the cube and the variance: final wavelength in z direction (in Angstrom).')
     
     
     grpext = parser.add_argument_group('Extraction arguments')
@@ -494,6 +599,7 @@ def main():
     grpout.add_argument('--writesmcube',         action='store_true', help='If set, write the smoothed cube.')
     grpout.add_argument('--writesmvar',          action='store_true', help='If set, write the smoothed variance.')
     grpout.add_argument('--writesmsnrcube',      action='store_true', help='If set, write the S/N smoothed cube.')
+    grpout.add_argument('--writesubcube',        action='store_true', help='If set and used, write the subcubes (cube and variance).')
     
     #...and more to come
         

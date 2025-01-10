@@ -52,7 +52,7 @@ The github distribution includes a shine/ directory that contains the following 
 
 - ``SHINE.py``: The main Python file containing the code for the extraction process.
 - ``GUI_SHINE.py``: The Python file containing the code for the GUI.
-- ``Make_Im_SHINE.py``: The Python file for the tool used to analyze the extraction results. It generates 2D surface brightness images.
+- ``Make_Im_SHINE.py``: The Python file for the tool used to analyze the extraction results. It generates 2D images.
 
 
 Usage of SHINE and tools
@@ -60,8 +60,16 @@ Usage of SHINE and tools
 ``SHINE`` and ``Make_Im_SHINE`` are installed as executables that can be called from the terminal.
 
 
-Run Extraction from the comamnd line
+Run Extraction from the command line
 ------------------------------------
+The extraction is performed using ``SHINE``. The basic idea behind the code is as follows:
+
+- Select a portion of the cube (in the z-direction or wavelength direction) where the user wants to focus the extraction, if needed;
+- Mask some voxels based on a user-provided mask (e.g., continuum sources);
+- Filter the cube spatially using a user-provided kernel dimension;
+- Threshold the cube based on the user-provided S/N threshold;
+- Group the connected voxels that satisfy the S/N threshold;
+- Write the catalogue and the labeled cube.
 
 **Basic Usage:**
 
@@ -69,11 +77,17 @@ Run Extraction from the comamnd line
 
    SHINE <cube> <variance> --input <input-file> --output <output-file>
 
-**Example:**
+**Example (without selecting a subcube):**
 
 .. code-block:: bash
 
    SHINE ../Cubes/Datacube.fits ../Cubes/Datavar.fits --snthresh 2 --spatsmooth 3 --minvox 300 --mindz 2  --outdir ../Dataproducts/ --writelabels
+
+**Example (selecting a subcube):**
+
+.. code-block:: bash
+
+   SHINE ../Cubes/Datacube.fits ../Cubes/Datavar.fits --zmin 40 --zmax 100 --snthresh 2 --spatsmooth 3 --minvox 300 --mindz 2  --outdir ../Dataproducts/ --writelabels --writesubcube
 
 
 **Command line arguments for SHINE:**
@@ -87,29 +101,33 @@ Run Extraction from the comamnd line
 
 - ``cube``: Path of the input datacube. Expected to be in extension 0, unless ``extcub`` is defined.
 - ``varcube``: Path of the variance cube. Expected to be in extension 0, unless ``extvar`` is defined.
-- ``--mask2d``: Path of an optional two-dimensional mask to be applied along the wave axis.
-- ``--mask2dpost``: Path of an optional two-dimensional mask to be applied after smoothing along the wave axis.
-- ``--mask3d``: Path of an optional three-dimensional mask. **(Not implemented yet)**.
-- ``--extcub``: Specifies the HDU index in the FITS file cube to use for data cube extraction.
-- ``--extvar``: Specifies the HDU index in the FITS file variance to use for cube extraction.
+- ``--mask2d``: (Optional) Path of an optional two-dimensional mask to be applied along the wave axis.
+- ``--mask2dpost``: (Optional) Path of an optional two-dimensional mask to be applied after smoothing along the wave axis.
+- ``--mask3d``: (Optional) Path of an optional three-dimensional mask. **(Not implemented yet)**.
+- ``--extcub``: Specifies the HDU index in the FITS file cube to use for data cube extraction (default=0).
+- ``--extvar``: Specifies the HDU index in the FITS file variance to use for cube extraction (default=0).
+- ``--zmin``: (Optional) Select the cube and the variance: initial pixel in z direction (from 0).
+- ``--zmax``: (Optional) Select the cube and the variance: final pixel in z direction (from 0).
+- ``--lmin``: (Optional) Select the cube and the variance: initial wavelength in z direction (in Angstrom).
+- ``--lmax``: (Optional) Select the cube and the variance: final wavelength in z direction (in Angstrom).
 
 *Extraction Arguments:*
 
-- ``--snthresh``: The SNR of voxels to be included in the extraction.
-- ``--spatsmooth``: Gaussian Sigma of the spatial convolution kernel applied in X and Y.
-- ``--spatsmoothX``: Gaussian Sigma of the spatial convolution kernel applied in X. Has priority over ``spatsmooth``.
-- ``--spatsmoothY``: Gaussian Sigma of the spatial convolution kernel applied in Y. Has priority over ``spatsmooth``.
+- ``--snthresh``: The SNR of voxels to be included in the extraction (default=2).
+- ``--spatsmooth``: Gaussian Sigma of the spatial convolution kernel applied in X and Y (default=0).
+- ``--spatsmoothX``: (Optional) Gaussian Sigma of the spatial convolution kernel applied in X. Has priority over ``spatsmooth``.
+- ``--spatsmoothY``: (Optional) Gaussian Sigma of the spatial convolution kernel applied in Y. Has priority over ``spatsmooth``.
 - ``--specsmooth``: Gaussian Sigma of the spectral convolution kernel applied in Lambda. **(Not implemented yet)**.
 - ``--usefftconv``: If ``True``, use FFT for convolution rather than the direct algorithm.
-- ``--connectivity``: Voxel connectivity scheme to be used. Allowed values: 4, 8 (2D); 26, 18, 6 (3D).
-- ``--maskspedge``: Determines how much (in pixels) to expand the mask around the edges of the cube/image.
+- ``--connectivity``: Voxel connectivity scheme to be used (default=26). Allowed values: 4, 8 (2D); 26, 18, 6 (3D).
+- ``--maskspedge``: Determines how much (in pixels) to expand the mask around the edges of the cube/image (default=20).
 
 *Cleaning Arguments:*
 
-- ``--minvox``: Minimum number of connected voxels for a source to be in the final catalogue.
-- ``--mindz``: Minimum number of connected voxels in the spectral direction for a source to be in the final catalogue.
-- ``--maxdz``: Maximum number of connected voxels in the spectral direction for a source to be in the final catalogue.
-- ``--minarea``: Minimum number of connected voxels in the projected spatial direction for a source to be in the final catalogue.
+- ``--minvox``: Minimum number of connected voxels for a source to be in the final catalogue (default=1).
+- ``--mindz``: Minimum number of connected voxels in the spectral direction for a source to be in the final catalogue (default=1).
+- ``--maxdz``: Maximum number of connected voxels in the spectral direction for a source to be in the final catalogue (default=200).
+- ``--minarea``: Minimum number of connected voxels in the projected spatial direction for a source to be in the final catalogue (default=3).
 
 *Output Control Arguments:*
 
@@ -118,6 +136,7 @@ Run Extraction from the comamnd line
 - ``--writesmcube``: If set, write the smoothed cube.
 - ``--writesmvar``: If set, write the smoothed variance.
 - ``--writesmsnrcube``: If set, write the S/N smoothed cube.
+- ``--writesubcube``: If set and used, write the subcubes (cube and variance).
 
 
 Run Extraction using the GUI
@@ -138,10 +157,11 @@ All implemented parameters can be adjusted according to the desired extraction, 
 Once the parameters are set, the user must click on ``Run Script`` to start the extraction. The process takes approximately one minute (faster with FFT convolution; however, for better handling of NaN values, we currently recommend avoiding the use of FFT), after which the output summary is displayed in a new window. The user can then close the GUI and begin analyzing the data products.
 
 
-Generation of surface brightness maps
+Generation of images
 -------------------------------------
 
-This tool is designed to create surface brightness images from 3D data using the output of ``SHINE``. The units of the output image are :math:`1 \times 10^{-18} \, \mathrm{erg \, s^{-1} \, cm^{-2} \, arcsec^{-2}}`. 
+This tool is designed to create images from 3D data. It is possible to create three different types of images (<flux>, <mean> or <median>) both selecting only certain voxels based on a 3D mask with associated Ids (e.g. the output labels cube of ``SHINE``, thus creating an extraction image) and all the voxels (thus creating a narrow band image). If <flux> is selected, the units of the output image are :math:`1 \times 10^{-18} \, \mathrm{erg \, s^{-1} \, cm^{-2} \, arcsec^{-2}}`. 
+Using a single Id object it is also possible to obtain an image with the representative noise around the object creating a pseudo narrow band around it.
 Below is a detailed list of the calling sequence and the command line arguments, grouped by categories:
 
 
@@ -149,15 +169,26 @@ Below is a detailed list of the calling sequence and the command line arguments,
 
 .. code-block:: bash
 
-   python Make_Im_SHINE.py <cube> <variance> --input <input-file> --output <output-file>
+   Make_Im_SHINE <cube> <variance> --input <input-file> --output <output-file>
 
-**Example:**
+**Example using a 3D mask for selecting voxels:**
 
 .. code-block:: bash
 
-   python Make_Im_SHINE.py ../Cubes/Datacube.fits ../Cubes/Datavar.fits --Id [2,5,9]  --outdir ../Dataproducts/ --writeout
+   Make_Im_SHINE ../Cubes/Datacube.fits ../Cubes/Labels.fits --Id [2,5,9]  --outdir ../Dataproducts/ --itype flux --writeout
+   
 
+**Example using a 3D mask for selecting voxels and associate the noise (only for one single object, i.e. one single Id):**
 
+.. code-block:: bash
+
+   Make_Im_SHINE ../Cubes/Datacube.fits ../Cubes/Labels.fits --Id [2]  --outdir ../Dataproducts/ --itype flux --nls -1 --nlsadd 2 --writeout
+   
+
+**Example to create a narrow band image:**
+
+.. code-block:: bash
+    Make_Im_SHINE ../Cubes/Datacube.fits  --outdir ../Dataproducts/ --itype flux --writeout
 
 
 .. _changelog:
@@ -185,8 +216,17 @@ If you are interested in contributing to the project, please contact us and foll
 API
 ===
 
-.. autofunction:: shine.SHINE.runextraction
+This section describes the available functions in the SHINE module.
 
+.. autofunction:: shine.SHINE.runextraction
+   :noindex:
+
+This function performs the extraction process using the specified parameters.
+
+.. autofunction:: shine.SHINE.subcube
+   :noindex:
+
+This function extracts a portion of the cube based on user-specified criteria.
 
 
 
