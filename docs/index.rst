@@ -188,7 +188,30 @@ Below is a detailed list of the calling sequence and the command line arguments,
 **Example to create a narrow band image:**
 
 .. code-block:: bash
+
     Make_Im_SHINE ../Cubes/Datacube.fits  --outdir ../Dataproducts/ --itype flux --writeout
+
+
+**Command line arguments for Make_IM_Shine:**
+
+
+*Input Control Arguments:*
+
+- ``cube``: Path of the input datacube. Expected to be in extension 0, unless ``extcub`` is defined.
+- ``labelsCube``: Path of the cube with labels. Expected to be in extension 0, unless ``extlabels`` is defined.
+- ``--Id``: The IDs of the grouped voxels to be used for the surface brightness image extraction. If a list is passed, all the valid IDs will be stacked into the final image. If ``[-1]`` (default), stacks all the IDs in the ``labelsCube``.
+- ``--itype``: Type of image to produce. Allowed values: ``flux`` (default), ``mean``, or ``median``.
+- ``--extcub``: Specifies the HDU index in the FITS file cube to use for science data extraction (default=0).
+- ``--extlabels``: Specifies the HDU index in the FITS file labels to use for labels data extraction (default=0).
+- ``--nsl``: Noise layers. Selects this layer associated with the object in the image. If ``-1``, it selects the mean layer. Use this only if ``len(Id)=1``. Default is ``-2`` (no noise layers).
+- ``--nsladd``: Noise layers. Specifies how many layers to collapse adjacent to the selected one (default=0).
+
+*Output Control Arguments:*
+
+- ``--outdir``: Output directory path (default=``./``).
+- ``--writeout``: If set, writes the flux image and the associated variance image.
+- ``--addname``: Optional suffix to append to the base name of the output file. This string will be added after the default filename (e.g., ``flux`` or other predefined parts) and before the file extension. Useful for distinguishing different versions or types of output files.
+
 
 
 .. _changelog:
