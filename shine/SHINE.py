@@ -36,6 +36,7 @@ except:
     
 #Author MF
 def filter_cube(cube, spatsig=2, specsig=0, isvar=False, usefft=False):
+    
     try:
         dummy = len(spatsig)
     except:
@@ -55,6 +56,12 @@ def filter_cube(cube, spatsig=2, specsig=0, isvar=False, usefft=False):
     SMcube = np.copy(cube)
     # Get cube sizes
     cubsize = np.shape(cube)
+    naxis = len(cubsize)
+    
+    if naxis==2:
+       SMcube = SMcube[np.newaxis,:]
+       cube   = cube[np.newaxis,:]
+       cubsize = np.shape(cube)
 
     # Choose convolution method
     if usefft:
@@ -89,12 +96,17 @@ def filter_cube(cube, spatsig=2, specsig=0, isvar=False, usefft=False):
         for i in np.arange(cubsize[0]):
             SMcube[i, ...] = myconv(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
 
-    if specsig > 0.:
+    if specsig > 0. and naxis==3:
         print('... Filtering the cube using Z-axis gaussian kernel of size {}'.format(specsig))
         specsigel = Gaussian1DKernel(specsig)
         # Will be implemented
-
-    return SMcube
+    elif specsig > 0. and naxis<3:   
+        print('... Z-axis filtering requested on non-3D data. No spectral filtering will occurr.')
+        
+    if naxis==2:
+       return SMcube[0,...]
+    else:   
+       return SMcube
 
 
 def find_nan_edges(cube, extend=None):
@@ -114,7 +126,14 @@ def find_nan_edges(cube, extend=None):
     
 
 def threshold_cube(cube, var, threshold=0.5, maskedge=0, edge_ima=None):
-    print(f'... Thresholding in S/N the cube with a threshold of {threshold}')
+    
+    naxis = len(np.shape(cube))
+    if naxis==2:
+       cube = cube[np.newaxis,:]
+       var = var[np.newaxis,:]
+       print(f'... Thresholding in S/N the image with a threshold of {threshold}')
+    else:
+       print(f'... Thresholding in S/N the cube with a threshold of {threshold}')
 
     # Compute signal-to-noise ratio (S/N)
     snrcube = cube / np.sqrt(var)
@@ -135,7 +154,10 @@ def threshold_cube(cube, var, threshold=0.5, maskedge=0, edge_ima=None):
     # Create a boolean mask based on the threshold
     snrcube_bool = 1 * ((snrcube > threshold) & (np.isfinite(snrcube)))
 
-    return snrcube_bool, snrcube
+    if naxis==2:
+       return snrcube_bool[0,...], snrcube[0,...]
+    else:
+       return snrcube_bool, snrcube
 
 
 
@@ -159,19 +181,27 @@ def masking(cube_labels, mask):
     return cube_labels
 
 
-def masking_nan(cube, mask):
+def masking_nan(data, mask):
     print('... Masking the cube with nans')
-
+    
+    naxis = len(np.shape(data))
+    if naxis==2:
+       data = data[np.newaxis, :]
+    
     # Identify bad regions where mask is greater than 0
     bad = mask[0, ...] > 0
-    nz = np.shape(cube)[0]
+    nz = np.shape(data)[0]
 
     # Replace bad regions with NaN
     for i in np.arange(nz):
-        cube[i, bad] = np.nan
+        data[i, bad] = np.nan
 
-    return cube
-
+    if naxis==2:
+       return data[0,...]
+    else:   
+       return data
+    
+      
 
 
 def subcube(cube=None, datahead=None, filename=None, pathcube=None, extcube=0, outdir='./', zmin=None, zmax=None, lmin=None, lmax=None, writesubcube=False, addname=''):
@@ -189,7 +219,6 @@ def subcube(cube=None, datahead=None, filename=None, pathcube=None, extcube=0, o
         if cube is None or datahead is None or filename is None:
             raise ValueError("Error: please provide the pathcube or data, header and filename.")
     #-----------------------------------------------------------------------
-        
     
     #----------------------- SELECT THE CUBE -------------------------------
     # assuming zmin starts from 0 and/or lmin from the minimum wavelength
@@ -244,22 +273,27 @@ def subcube(cube=None, datahead=None, filename=None, pathcube=None, extcube=0, o
     return subcube, newhead
 
 
-
-
 #Author DT
 def extract(cube, connectivity=26):
 
     print('... Extraction')
 
-    # only 4,8 (2D) and 26, 18, and 6 (3D) are allowed
-
+    #only 4,8 (2D) and 26, 18, and 6 (3D) are allowed
+    
+    naxis = len(np.shape(cube))
+    if naxis == 2:
+       if connectivity not in [4,8]:
+          raise ValueError('Connectivity should be 4 or 8 for 2D images. Found {}.'.format(connectivity))
+    elif naxis == 3:      
+      if connectivity not in [6,18,26]:
+          raise ValueError('Connectivity should be 6, 18, or 26 for 3D cubes. Found {}.'.format(connectivity))
+          
     label_cube = cc3d.connected_components(cube, connectivity=connectivity)
 
     return label_cube
 
 
-
-def generate_catalogue(labels):
+def generate_catalogue(labels, naxis=3):
     
     stats = cc3d.statistics(labels)
     
@@ -268,7 +302,8 @@ def generate_catalogue(labels):
     Nvox  = stats['voxel_counts']
     Xcent = stats['centroids'][:,-1]
     Ycent = stats['centroids'][:,-2]
-    Zcent = stats['centroids'][:,-3]
+    if naxis==3:
+       Zcent = stats['centroids'][:,-3]
     
     Xmin = []
     Xmax = []
@@ -278,6 +313,7 @@ def generate_catalogue(labels):
     Zmax = []
     
     BBarray = stats['bounding_boxes']
+        
     for ii in np.arange(Nobj):
         thisbb = BBarray[ii]
         
@@ -285,9 +321,12 @@ def generate_catalogue(labels):
         Xmax.append(thisbb[-1].stop) 
         Ymin.append(thisbb[-2].start)
         Ymax.append(thisbb[-2].stop)
-        Zmin.append(thisbb[-3].start)
-        Zmax.append(thisbb[-3].stop)
-
+        try:
+         Zmin.append(thisbb[-3].start)
+         Zmax.append(thisbb[-3].stop)
+        except:
+         pass
+        
     Nspat = []
     
     Xmin = np.array(Xmin)
@@ -295,17 +334,24 @@ def generate_catalogue(labels):
     Ymin = np.array(Ymin)
     Ymax = np.array(Ymax)
     Zmin = np.array(Zmin)
-    Zmax = np.array(Zmax)
-    
+    Zmax = np.array(Zmax)        
         
     for ind, tid in enumerate(IDs):
-        pstamp = np.copy(labels[Zmin[ind]:Zmax[ind],Ymin[ind]:Ymax[ind],Xmin[ind]:Xmax[ind]])
+        if naxis==2:
+           pstamp = np.copy(labels[Ymin[ind]:Ymax[ind],Xmin[ind]:Xmax[ind]])
+        elif naxis==3:
+           pstamp = np.copy(labels[Zmin[ind]:Zmax[ind],Ymin[ind]:Ymax[ind],Xmin[ind]:Xmax[ind]])
+            
         Nspat.append(calc_xyarea(pstamp,tid))
     
     Nspat = np.array(Nspat)
     Nz = Zmax-Zmin    #This should be right without a +1
     
-    table = Table([IDs, Nvox, Nspat, Nz, Xcent, Ycent, Zcent, Xmin, Xmax, Ymin, Ymax, Zmin, Zmax], \
+    if naxis==2:
+       table = Table([IDs, Nvox, Nspat, Xcent, Ycent, Xmin, Xmax, Ymin, Ymax], \
+            names=('ID', 'Nvox', 'Nspat', 'Xcent', 'Ycent', 'Xmin', 'Xmax', 'Ymin', 'Ymax'))
+    elif naxis==3:
+       table = Table([IDs, Nvox, Nspat, Nz, Xcent, Ycent, Zcent, Xmin, Xmax, Ymin, Ymax, Zmin, Zmax], \
             names=('ID', 'Nvox', 'Nspat', 'Nz', 'Xcent', 'Ycent', 'Zcent', 'Xmin', 'Xmax', 'Ymin', 'Ymax', 'Zmin', 'Zmax'))
     
     print('... Extraction DONE. {} objects found.'.format(len(IDs)))
@@ -413,14 +459,17 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
     cubefilename = Path(fcube).stem
     varfilename  = Path(fvariance).stem
     
+    naxis = len(hducube[extcub].data.shape)
+    print(naxis)
+    
     #find edges
     edge_ima        = find_nan_edges(hducube[extcub].data, extend=maskspedge)
        
           
     if fmask2D is not None:
         mask2D = fits.open(fmask2D)[0].data
-        cube = masking_nan(hducube[extcub].data,   mask2D)
-        #var  = masking_nan(hduvar[extvar].data,    mask2D)
+        cube = masking_nan(hducube[extcub].data, mask2D)
+        #var  = masking_nan(hduvar[extvar].data, mask2D)
         var  = hduvar[extvar].data
     else:
         cube = hducube[extcub].data
@@ -476,7 +525,7 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
     #*********************************************************************************************
     #step 5: generate a first version of the catalogue
     #*********************************************************************************************
-    catalogue = generate_catalogue(labels_out)   
+    catalogue = generate_catalogue(labels_out, naxis=naxis)   
     
     
     #*********************************************************************************************
@@ -561,11 +610,11 @@ def main():
     
     grpinp = parser.add_argument_group('Input control arguments') 
     
-    grpinp.add_argument('cube',        help='Path of the input datacube. Expected to be in extension 0, unless extcub is defined.')
-    grpinp.add_argument('varcube',     help='Path of the variance cube. Expected to be in extension 0, unless extvar is defined.')
+    grpinp.add_argument('data',        help='Path of the input data cube/image. Expected to be in extension 0, unless extcub is defined.')
+    grpinp.add_argument('vardata',     help='Path of the variance cube/image.   Expected to be in extension 0, unless extvar is defined.')
     grpinp.add_argument('--mask2d',    default= None,  help='Path of an optional two dimensional mask to be applied along the wave axis.')
     grpinp.add_argument('--mask2dpost',default= None,  help='Path of an optional two dimensional mask to be applied after the smoothing along the wave axis.')
-    grpinp.add_argument('--mask3d',    default= None,  help='Path of an optional three dimesional mask. NOT IMPLEMENTED YET.')
+    grpinp.add_argument('--mask3d',    default= None,  help='Path of an optional three dimesional mask. Valid only for 3D data. NOT IMPLEMENTED YET.')
     grpinp.add_argument('--extcub',    default= 0, type=int, help='Specifies the HDU index in the FITS file cube to use for the data cube extraction.')
     grpinp.add_argument('--extvar',    default= 0, type=int, help='Specifies the HDU index in the FITS file variance to use for the cube extraction.')
     grpinp.add_argument('--zmin',      default= None, type=int, help='If selecting the cube and the variance: initial pixel in z direction (from 0).')
@@ -613,12 +662,9 @@ def main():
     if args.spatsmoothY is not None:
         spatsig[1] = args.spatsmoothY
     
-    #if args.maskspedge==None:
-    #    args.maskspedge=int(5*spatsig[0])
-    
-    runextraction(args.cube, args.varcube, \
+    runextraction(args.data, args.vardata, \
     fmask2D = args.mask2d, fmask2Dpost = args.mask2dpost, fmask3D = args.mask3d, extcub=args.extcub, extvar=args.extvar, \
-    spatsig = spatsig, specsig=args.specsmooth, usefft=args.usefftconv, SNthreshold=args.snthresh, \
+    spatsig = spatsig, specsig=args.specsmooth, usefft=args.usefftconv, SNthreshold=args.snthresh, connectivity = args.connectivity, \
     maskspedge=args.maskspedge, mindz = args.mindz, maxdz=args.maxdz, minvox=args.minvox, minarea=args.minarea, \
     outdir=args.outdir, writelabels=args.writelabels, writesmcube=args.writesmcube, \
     writesmvar=args.writesmvar, writesmsnrcube=args.writesmsnrcube)
