@@ -102,7 +102,7 @@ The extraction is performed using ``SHINE``. The basic idea behind the code is a
 - ``cube``: Path of the input datacube. Expected to be in extension 0, unless ``extcub`` is defined.
 - ``varcube``: Path of the variance cube. Expected to be in extension 0, unless ``extvar`` is defined.
 - ``--mask2d``: (Optional) Path of an optional two-dimensional mask to be applied along the wave axis.
-- ``--mask2dpost``: (Optional) Path of an optional two-dimensional mask to be applied after smoothing along the wave axis.
+- ``--mask2dpost``: (Optional) Path of an optional two-dimensional mask to be applied after the spatial smoothing.
 - ``--mask3d``: (Optional) Path of an optional three-dimensional mask. **(Not implemented yet)**.
 - ``--extcub``: Specifies the HDU index in the FITS file cube to use for data cube extraction (default=0).
 - ``--extvar``: Specifies the HDU index in the FITS file variance to use for cube extraction (default=0).
