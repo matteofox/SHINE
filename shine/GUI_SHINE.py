@@ -38,16 +38,16 @@ class GUI_SHINE:
         self.frame_input.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
         
         # Cube and Variance Cube (Browse)
-        self.entry_cube    = self.create_input_row_with_browse(self.frame_input, "Cube (Required):", 1)
-        self.entry_varcube = self.create_input_row_with_browse(self.frame_input, "Variance Cube (Required):", 2)
+        self.entry_cube    = self.create_input_row_with_browse(self.frame_input, "Cube/Image (Required):", 1)
+        self.entry_varcube = self.create_input_row_with_browse(self.frame_input, "Variance Cube/Image (Required):", 2)
         
         # 2D Mask and 3D Mask (Browse)
         self.entry_mask2d     = self.create_input_row_with_browse(self.frame_input, "2D Mask (Optional):", 3)
         self.entry_mask2dpost = self.create_input_row_with_browse(self.frame_input, "2D Mask Post Smoothing (Optional):", 4)
         
         # Small Entries (Cube Extension and Variance Extension)
-        self.entry_extcub = self.create_small_input(self.frame_input, "Cube Ext (Default=0):", 0, "0")  
-        self.entry_extvar = self.create_small_input(self.frame_input, "Var Ext (Default=0):", 1, "0")  
+        self.entry_extcub = self.create_small_input(self.frame_input, "Cube/Image Ext (Default=0):", 0, "0")  
+        self.entry_extvar = self.create_small_input(self.frame_input, "Var Cube/Image Ext (Default=0):", 1, "0")  
         
         # Cut the cube and variance if needed
         self.entry_cutzmin = self.create_small_input(self.frame_input, "zmin (Default=None):",2, " ")
@@ -286,7 +286,7 @@ class GUI_SHINE:
         if writelabels:
             command.append("--writelabels")
         if writesmcube:
-            command.append("--writesmcube")ifdsq
+            command.append("--writesmcube")
         if writesmvar:
             command.append("--writesmvar")
         if writesmsnrcube:

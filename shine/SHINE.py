@@ -187,7 +187,7 @@ def subcube(cube=None, datahead=None, filename=None, pathcube=None, extcube=0, o
     else:
         #if the pathcube is not provided check the data, datahead, filename
         if cube is None or datahead is None or filename is None:
-            raise ValueError("Error: please provide the pathcube or data, header and filename.")
+            raise ValueError("Error: please provide the pathcube or data+header+filename.")
     #-----------------------------------------------------------------------
         
     
