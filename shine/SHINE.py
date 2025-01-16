@@ -253,11 +253,8 @@ def subcube(cube=None, datahead=None, filename=None, pathcube=None, extcube=0, o
         subcube = cube[zmin:zmax, :, :]
         
     else: 
-        print('... Please provide zmin/zmax or lmin/lmax')
-    #------------------------------------------------------------------------
-    
-    
-    
+        raise ValueError("Error: Please provide zmin/zmax or lmin/lmax.")
+
     #----------------------- SAVE THE OUTPUT ------------------------------- 
     print(f'... Selecting the cube between {zmin} and {zmax}')
     
