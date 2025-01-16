@@ -148,13 +148,7 @@ Run the GUI using:
 
    python GUI_SHINE.py
 
-The GUI is simple (see Fig.1) and allows the user to select input data (Cube/Image, Variance Cube/Image, and optional 2D masks) either by entering the path into the white cells or by clicking the ``Browse`` button to navigate through directories. Similarly, the user can specify the output directory.
-
-All implemented parameters can be adjusted according to the desired extraction, with default values provided for convenience. Data products can be selected by checking the white cells in the *Output Control Arguments* section. By default, the cube containing the IDs of the identified objects and the catalog are selected.
-
-**Note:** Spectral smoothing is not implemented yet.
-
-Once the parameters are set, the user must click on ``Run Script`` to start the extraction. The process takes approximately few minutes for cubes and few seconds for images (faster with FFT convolution; however, for better handling of NaN values, we currently recommend avoiding the use of FFT), after which the output summary is displayed in a new window. The user can then close the GUI and begin analyzing the data products.
+The GUI is simple and allows the user to select input data (Cube/Image, Variance Cube/Image, and optional 2D masks) either by entering the path into the white cells or by clicking the ``Browse`` button to navigate through directories. Similarly, the user can specify the output directory.
 
 .. figure:: /Images/GUI_image.png
    :width: 80%
@@ -163,12 +157,19 @@ Once the parameters are set, the user must click on ``Run Script`` to start the 
 
    GUI window after ``python GUI_SHINE.py``.
 
-.. figure:: /Images/Success_GUI_image.png
-   :width: 80%
-   :align: left
-   :alt: Output summary of successful extraction.
+All implemented parameters can be adjusted according to the desired extraction, with default values provided for convenience. Data products can be selected by checking the white cells in the *Output Control Arguments* section. By default, the cube containing the IDs of the identified objects and the catalog are selected.
 
-   Output summary of successful extraction.
+**Note:** Spectral smoothing is not implemented yet.
+
+Once the parameters are set, the user must click on ``Run Script`` to start the extraction. The process takes approximately few minutes for cubes and few seconds for images (faster with FFT convolution; however, for better handling of NaN values, we currently recommend avoiding the use of FFT), after which the output summary is displayed in a new window. The user can then close the GUI and begin analyzing the data products.
+
+.. figure:: /Images/Success_GUI_image.png
+   :width: 40%
+   :align: left
+   :alt: Output summary of successful extraction (Example).
+
+   Output summary of successful extraction (Example).
+
 
 Generation of images
 -------------------------------------
