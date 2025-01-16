@@ -99,44 +99,44 @@ The extraction is performed using ``SHINE``. The basic idea behind the code is a
 
 *Input Control Arguments:*
 
-- ``cube``: Path of the input datacube. Expected to be in extension 0, unless ``extcub`` is defined.
-- ``varcube``: Path of the variance cube. Expected to be in extension 0, unless ``extvar`` is defined.
+- ``data``: Path of the input data (3D or 2D). Expected to be in extension 0, unless ``extdata`` is defined.
+- ``varcube``: Path of the variance cube. Expected to be in extension 0, unless ``extvardata`` is defined.
 - ``--mask2d``: (Optional) Path of an optional two-dimensional mask to be applied along the wave axis.
 - ``--mask2dpost``: (Optional) Path of an optional two-dimensional mask to be applied after the spatial smoothing.
 - ``--mask3d``: (Optional) Path of an optional three-dimensional mask. **(Not implemented yet)**.
-- ``--extcub``: Specifies the HDU index in the FITS file cube to use for data cube extraction (default=0).
-- ``--extvar``: Specifies the HDU index in the FITS file variance to use for cube extraction (default=0).
-- ``--zmin``: (Optional) Select the cube and the variance: initial pixel in z direction (from 0).
-- ``--zmax``: (Optional) Select the cube and the variance: final pixel in z direction (from 0).
-- ``--lmin``: (Optional) Select the cube and the variance: initial wavelength in z direction (in Angstrom).
-- ``--lmax``: (Optional) Select the cube and the variance: final wavelength in z direction (in Angstrom).
+- ``--extdata``: Specifies the HDU index in the FITS file to use for data extraction (default=0).
+- ``--extvardata``: Specifies the HDU index in the FITS file variance to use for data extraction (default=0).
+- ``--zmin``: (Optional) Select the cube and the variance: initial pixel in z direction (from 0). Only valid for 3D data.
+- ``--zmax``: (Optional) Select the cube and the variance: final pixel in z direction (from 0). Only valid for 3D data.
+- ``--lmin``: (Optional) Select the cube and the variance: initial wavelength in z direction (in Angstrom). Only valid for 3D data.
+- ``--lmax``: (Optional) Select the cube and the variance: final wavelength in z direction (in Angstrom). Only valid for 3D data.
 
 *Extraction Arguments:*
 
-- ``--snthresh``: The SNR of voxels to be included in the extraction (default=2).
+- ``--snthresh``: The SNR of voxels (3D)/pixels (2D) to be included in the extraction (default=2).
 - ``--spatsmooth``: Gaussian Sigma of the spatial convolution kernel applied in X and Y (default=0).
 - ``--spatsmoothX``: (Optional) Gaussian Sigma of the spatial convolution kernel applied in X. Has priority over ``spatsmooth``.
 - ``--spatsmoothY``: (Optional) Gaussian Sigma of the spatial convolution kernel applied in Y. Has priority over ``spatsmooth``.
 - ``--specsmooth``: Gaussian Sigma of the spectral convolution kernel applied in Lambda. **(Not implemented yet)**.
-- ``--usefftconv``: If ``True``, use FFT for convolution rather than the direct algorithm.
+- ``--usefftconv``: If ``True``, use FFT for convolution rather than the direct algorithm. For better handling of masked sources, it is currently recommended NOT to use FFT.
 - ``--connectivity``: Voxel connectivity scheme to be used (default=26). Allowed values: 4, 8 (2D); 26, 18, 6 (3D).
 - ``--maskspedge``: Determines how much (in pixels) to expand the mask around the edges of the cube/image (default=20).
 
 *Cleaning Arguments:*
 
-- ``--minvox``: Minimum number of connected voxels for a source to be in the final catalogue (default=1).
-- ``--mindz``: Minimum number of connected voxels in the spectral direction for a source to be in the final catalogue (default=1).
-- ``--maxdz``: Maximum number of connected voxels in the spectral direction for a source to be in the final catalogue (default=200).
-- ``--minarea``: Minimum number of connected voxels in the projected spatial direction for a source to be in the final catalogue (default=3).
+- ``--minvox``: Minimum number of connected voxels (3D)/pixels (2D) for a source to be in the final catalogue (default=1). For 2D data this argument has priority over minarea.
+- ``--mindz``: Minimum number of connected voxels in the spectral direction for a source to be in the final catalogue (default=1). Only valid for 3D data.
+- ``--maxdz``: Maximum number of connected voxels in the spectral direction for a source to be in the final catalogue (default=200). Only valid for 3D data.
+- ``--minarea``: Minimum number of connected projected spatial voxels (3D)/pixels (2D) for a source to be in the final catalogue (default=1). 
 
 *Output Control Arguments:*
 
 - ``--outdir``: Output directory path.
-- ``--writelabels``: If set, write labels cube.
-- ``--writesmcube``: If set, write the smoothed cube.
+- ``--writelabels``: If set, write labels cube/image.
+- ``--writesmdata``: If set, write the smoothed cube/image.
 - ``--writesmvar``: If set, write the smoothed variance.
-- ``--writesmsnrcube``: If set, write the S/N smoothed cube.
-- ``--writesubcube``: If set and used, write the subcubes (cube and variance).
+- ``--writesmsnr``: If set, write the S/N smoothed cube/image.
+- ``--writesubcube``: If set and used, write the subcubes (cube and variance). Only valid for 3D data.
 
 
 Run Extraction using the GUI
@@ -148,14 +148,27 @@ Run the GUI using:
 
    python GUI_SHINE.py
 
-The GUI is simple and allows the user to select input data (Cube, Variance, and optional 2D masks) either by entering the path into the white cells or by clicking the ``Browse`` button to navigate through directories. Similarly, the user can specify the output directory.
+The GUI is simple (see Fig.1) and allows the user to select input data (Cube/Image, Variance Cube/Image, and optional 2D masks) either by entering the path into the white cells or by clicking the ``Browse`` button to navigate through directories. Similarly, the user can specify the output directory.
 
 All implemented parameters can be adjusted according to the desired extraction, with default values provided for convenience. Data products can be selected by checking the white cells in the *Output Control Arguments* section. By default, the cube containing the IDs of the identified objects and the catalog are selected.
 
 **Note:** Spectral smoothing is not implemented yet.
 
-Once the parameters are set, the user must click on ``Run Script`` to start the extraction. The process takes approximately one minute (faster with FFT convolution; however, for better handling of NaN values, we currently recommend avoiding the use of FFT), after which the output summary is displayed in a new window. The user can then close the GUI and begin analyzing the data products.
+Once the parameters are set, the user must click on ``Run Script`` to start the extraction. The process takes approximately few minutes for cubes and few seconds for images (faster with FFT convolution; however, for better handling of NaN values, we currently recommend avoiding the use of FFT), after which the output summary is displayed in a new window. The user can then close the GUI and begin analyzing the data products.
 
+.. figure:: /Images/GUI_image.png
+   :width: 80%
+   :align: left
+   :alt: GUI window after ``python GUI_SHINE.py``.
+
+   GUI window after ``python GUI_SHINE.py``.
+
+.. figure:: /Images/Success_GUI_image.png
+   :width: 80%
+   :align: left
+   :alt: Output summary of successful extraction.
+
+   Output summary of successful extraction.
 
 Generation of images
 -------------------------------------

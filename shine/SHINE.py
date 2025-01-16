@@ -474,7 +474,7 @@ def compute_photometry(catalogue, cube, var, labelsCube):
     return catalogue     
 
 
-def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, extcub=0, extvar=0, \
+def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, extdata=0, extvardata=0, \
                   SNthreshold=2, maskspedge=0, spatsig=2, specsig=0, usefft=False, connectivity=26, \
                   mindz=1, maxdz=200, minvox = 1, minarea=1, zmin=None, zmax=None, lmin=None, lmax=None, outdir='./', \
                   writelabels=False, writesmdata=False, writesmvar=False, writesmsnr=False, writesubcube=False):
@@ -482,31 +482,31 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     
     hducube      = fits.open(data)
     hduvar       = fits.open(vardata)
-    hduhead      = hducube[extcub].header
+    hduhead      = hducube[extdata].header
     cubefilename = Path(data).stem
     varfilename  = Path(vardata).stem
     
-    naxis = len(hducube[extcub].data.shape)
+    naxis = len(hducube[extdata].data.shape)
     
     #find edges
-    edge_ima        = find_nan_edges(hducube[extcub].data, extend=maskspedge)
+    edge_ima        = find_nan_edges(hducube[extdata].data, extend=maskspedge)
        
           
     if mask2d is not None:
         mask2D = fits.open(mask2d)[0].data
-        cube = masking_nan(hducube[extcub].data, mask2D)
-        #var  = masking_nan(hduvar[extvar].data, mask2D)
-        var  = hduvar[extvar].data
+        cube = masking_nan(hducube[extdata].data, mask2D)
+        #var  = masking_nan(hduvar[extvardata].data, mask2D)
+        var  = hduvar[extvardata].data
     else:
-        cube = hducube[extcub].data
-        var  = hduvar[extvar].data        
+        cube = hducube[extdata].data
+        var  = hduvar[extvardata].data        
         
     
     #******************************************************************************************
     #step 0: create a subcube (in wavelength) of the original cube, if necessary and if data is 3D
     #******************************************************************************************
     if naxis==3:
-        print('... Perform the extraction on a 3D data-cube')
+      print('... Perform the extraction on a 3D data-cube')
       
       if zmin and zmax is not None:
         cube, newhduhead  = subcube(cube=cube, datahead=hduhead, filename=cubefilename, outdir=outdir, zmin=zmin, zmax=zmax, writesubcube=writesubcube)
@@ -529,7 +529,7 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
          warnings.warn('Lmin and/or Lmax arguments have been specified on a 2D input dataset. These arguments will be disregarded in the run.', SHINEWarning)
 
     else:
-        raise ValueError('Error: the data dimension is not correct. It can be a 2D or 3D dataset.')
+      raise ValueError('Error: the data dimension is not correct. It can be a 2D or 3D dataset.')
           
        
     #******************************************************************************************
@@ -653,17 +653,17 @@ def main():
     
     grpinp = parser.add_argument_group('Input control arguments') 
     
-    grpinp.add_argument('data',        help='Path of the input data cube/image. Expected to be in extension 0, unless extcub is defined.')
-    grpinp.add_argument('vardata',     help='Path of the variance cube/image.   Expected to be in extension 0, unless extvar is defined.')
-    grpinp.add_argument('--mask2d',    default= None,  help='Path of an optional two dimensional mask to be applied along the wave axis.')
-    grpinp.add_argument('--mask2dpost',default= None,  help='Path of an optional two dimensional mask to be applied after the smoothing along the wave axis.')
-    grpinp.add_argument('--mask3d',    default= None,  help='Path of an optional three dimesional mask. Valid only for 3D data. NOT IMPLEMENTED YET.')
-    grpinp.add_argument('--extcub',    default= 0, type=int, help='Specifies the HDU index in the FITS file cube to use for the data cube extraction.')
-    grpinp.add_argument('--extvar',    default= 0, type=int, help='Specifies the HDU index in the FITS file variance to use for the cube extraction.')
-    grpinp.add_argument('--zmin',      default= None, type=int, help='If selecting the cube and the variance: initial pixel in z direction (from 0). Only valid for 3D data.')
-    grpinp.add_argument('--zmax',      default= None, type=int, help='If selecting the cube and the variance: final pixel in z direction (from 0). Only valid for 3D data.')
-    grpinp.add_argument('--lmin',      default= None, type=float, help='If selecting the cube and the variance: initial wavelength in z direction (in Angstrom). Only valid for 3D data.')
-    grpinp.add_argument('--lmax',      default= None, type=float, help='If selecting the cube and the variance: final wavelength in z direction (in Angstrom). Only valid for 3D data.')
+    grpinp.add_argument('data',            help='Path of the input data cube/image. Expected to be in extension 0, unless extdata is defined.')
+    grpinp.add_argument('vardata',         help='Path of the variance cube/image.   Expected to be in extension 0, unless extvardata is defined.')
+    grpinp.add_argument('--mask2d',        default= None,  help='Path of an optional two dimensional mask to be applied along the wave axis.')
+    grpinp.add_argument('--mask2dpost',    default= None,  help='Path of an optional two dimensional mask to be applied after the smoothing along the wave axis.')
+    grpinp.add_argument('--mask3d',        default= None,  help='Path of an optional three dimesional mask. Valid only for 3D data. NOT IMPLEMENTED YET.')
+    grpinp.add_argument('--extdata',       default= 0, type=int, help='Specifies the HDU index in the FITS file cube to use for the data cube extraction.')
+    grpinp.add_argument('--extvardata',    default= 0, type=int, help='Specifies the HDU index in the FITS file variance to use for the cube extraction.')
+    grpinp.add_argument('--zmin',          default= None, type=int, help='If selecting the cube and the variance: initial pixel in z direction (from 0). Only valid for 3D data.')
+    grpinp.add_argument('--zmax',          default= None, type=int, help='If selecting the cube and the variance: final pixel in z direction (from 0). Only valid for 3D data.')
+    grpinp.add_argument('--lmin',          default= None, type=float, help='If selecting the cube and the variance: initial wavelength in z direction (in Angstrom). Only valid for 3D data.')
+    grpinp.add_argument('--lmax',          default= None, type=float, help='If selecting the cube and the variance: final wavelength in z direction (in Angstrom). Only valid for 3D data.')
     
     
     grpext = parser.add_argument_group('Extraction arguments')
@@ -687,11 +687,11 @@ def main():
     grpout = parser.add_argument_group('Output control arguments')
     
     grpout.add_argument('--outdir',              default='./',        help='Output directory path.')
-    grpout.add_argument('--writelabels',         action='store_true', help='If set, write labels cube.')
-    grpout.add_argument('--writesmdata',         action='store_true', help='If set, write the smoothed cube.')
+    grpout.add_argument('--writelabels',         action='store_true', help='If set, write labels cube/image.')
+    grpout.add_argument('--writesmdata',         action='store_true', help='If set, write the smoothed cube/image.')
     grpout.add_argument('--writesmvar',          action='store_true', help='If set, write the smoothed variance.')
-    grpout.add_argument('--writesmsnr',          action='store_true', help='If set, write the S/N smoothed cube.')
-    grpout.add_argument('--writesubcube',        action='store_true', help='If set and used, write the subcubes (cube and variance).')
+    grpout.add_argument('--writesmsnr',          action='store_true', help='If set, write the S/N smoothed cube/image.')
+    grpout.add_argument('--writesubcube',        action='store_true', help='If set and used, write the subcubes (cube and variance). Only valid for 3D data.')
     
     #...and more to come
         
@@ -706,7 +706,7 @@ def main():
         spatsig[1] = args.spatsmoothY
     
     runextraction(args.data, args.vardata, \
-    mask2d = args.mask2d, mask2dpost = args.mask2dpost, fmask3D = args.mask3d, extcub=args.extcub, extvar=args.extvar, \
+    mask2d = args.mask2d, mask2dpost = args.mask2dpost, fmask3D = args.mask3d, extdata=args.extdata, extvardata=args.extvardata, \
     zmin = args.zmin, zmax=args.zmax, lmin=args.lmin, lmax=args.lmax, spatsig = spatsig, specsig=args.specsmooth, \
     usefft=args.usefftconv, SNthreshold=args.snthresh, connectivity = args.connectivity, \
     maskspedge=args.maskspedge, mindz = args.mindz, maxdz=args.maxdz, minvox=args.minvox, minarea=args.minarea, \

@@ -12,7 +12,7 @@ class GUI_SHINE:
     def __init__(self, root):
         """Initialize the GUI."""
         self.root = root
-        self.root.title("SHINE (v0 version)")
+        self.root.title("SHINE (v1 version)")
         
         # Set minimum size for the window
         self.root.geometry("1200x900")  # Width x Height
@@ -50,10 +50,10 @@ class GUI_SHINE:
         self.entry_extvar = self.create_small_input(self.frame_input, "Var Cube/Image Ext (Default=0):", 1, "0")  
         
         # Cut the cube and variance if needed
-        self.entry_cutzmin = self.create_small_input(self.frame_input, "zmin (Default=None):",2, " ")
-        self.entry_cutzmax = self.create_small_input(self.frame_input, "zmax (Default=None):",3, " ")
-        self.entry_cutlmin = self.create_small_input(self.frame_input, "lmin (Default=None):",4, " ")
-        self.entry_cutlmax = self.create_small_input(self.frame_input, "lmax (Default=None):",5, " ")
+        self.entry_cutzmin = self.create_small_input(self.frame_input, "zmin (Default=None):",2, "None")
+        self.entry_cutzmax = self.create_small_input(self.frame_input, "zmax (Default=None):",3, "None")
+        self.entry_cutlmin = self.create_small_input(self.frame_input, "lmin (Default=None):",4, "None")
+        self.entry_cutlmax = self.create_small_input(self.frame_input, "lmax (Default=None):",5, "None")
         
         # === Extraction Arguments Section (grpext) ===
         self.frame_extraction = tk.LabelFrame(root, text="Extraction Arguments", padx=10, pady=10)
@@ -76,7 +76,7 @@ class GUI_SHINE:
         self.entry_minvox  = self.create_input_row(self.frame_cleaning, "Min Voxels (Default=1):", 0, "1")
         self.entry_mindz   = self.create_input_row(self.frame_cleaning, "Min DZ (Default=3):", 1, "3")
         self.entry_maxdz   = self.create_input_row(self.frame_cleaning, "Max DZ (Default=200):", 2, "200")
-        self.entry_minarea = self.create_input_row(self.frame_cleaning, "Min Area (Default=3):", 3, "3")
+        self.entry_minarea = self.create_input_row(self.frame_cleaning, "Min Area (Default=1):", 3, "1")
 
         # === Output Control Arguments Section (grpout) ===
         self.frame_output = tk.LabelFrame(root, text="Output Control Arguments", padx=10, pady=10)
@@ -90,9 +90,9 @@ class GUI_SHINE:
         self.var_writesubcube   = tk.BooleanVar()  
 
         tk.Checkbutton(self.frame_output, text="Write Labels", variable=self.var_writelabels).grid(row=1, column=0, sticky="w")
-        tk.Checkbutton(self.frame_output, text="Write Smoothed Cube", variable=self.var_writesmcube).grid(row=2, column=0, sticky="w")
+        tk.Checkbutton(self.frame_output, text="Write Smoothed Cube/Image", variable=self.var_writesmcube).grid(row=2, column=0, sticky="w")
         tk.Checkbutton(self.frame_output, text="Write Smoothed Variance", variable=self.var_writesmvar).grid(row=3, column=0, sticky="w")
-        tk.Checkbutton(self.frame_output, text="Write Smoothed S/N Cube", variable=self.var_writesmsnrcube).grid(row=4, column=0, sticky="w")
+        tk.Checkbutton(self.frame_output, text="Write Smoothed S/N Cube/Image", variable=self.var_writesmsnrcube).grid(row=4, column=0, sticky="w")
         tk.Checkbutton(self.frame_output, text="Write Subcube", variable=self.var_writesubcube).grid(row=5, column=0, sticky="w")
 
         # === Run Button ===
@@ -216,8 +216,8 @@ class GUI_SHINE:
 
         """Run the external script with the provided parameters."""
         # Collect input arguments
-        cube       = self.entry_cube.get()
-        varcube    = self.entry_varcube.get()
+        data       = self.entry_cube.get()
+        vardata    = self.entry_varcube.get()
         mask2d     = self.entry_mask2d.get()
         mask2dpost = self.entry_mask2dpost.get()
         extcub     = self.entry_extcub.get()
@@ -250,13 +250,13 @@ class GUI_SHINE:
         writesmvar     = self.var_writesmvar.get()
         writesmsnrcube = self.var_writesmsnrcube.get()
         writesubcube   = self.var_writesubcube.get()
-        
+
 
         # Construct the command
         command = [
             "python", "SHINE.py",
-            cube, varcube,
-            f"--extcub={extcub}", f"--extvar={extvar}",
+            data, vardata,
+            f"--extdata={extcub}", f"--extvardata={extvar}",
             f"--snthresh={snthresh}", f"--spatsmooth={spatsmooth}",
             f"--connectivity={connectivity}", f"--maskspedge={maskspatedge}",
             f"--minvox={minvox}", f"--mindz={mindz}", f"--maxdz={maxdz}", f"--minarea={minarea}",
@@ -276,6 +276,13 @@ class GUI_SHINE:
         if usefftconv:
             command.append(f"--usefftconv={usefftconv}")
 
+        if zmin and zmax == "None":
+            zmin = None
+            zmax = None
+        if lmin and lmax == "None":
+            lmin = None
+            lmax = None
+        
         #cut
         if zmin and zmax is not None:
             command.append(f"--zmin={zmin} --zmax={zmax}")
@@ -286,11 +293,11 @@ class GUI_SHINE:
         if writelabels:
             command.append("--writelabels")
         if writesmcube:
-            command.append("--writesmcube")
+            command.append("--writesmdata")
         if writesmvar:
             command.append("--writesmvar")
         if writesmsnrcube:
-            command.append("--writesmsnrcube")
+            command.append("--writesmsnr")
         if writesubcube:
             command.append("--writesubcube")        
         if outdir:
