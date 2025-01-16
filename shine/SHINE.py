@@ -340,20 +340,18 @@ def generate_catalogue(labels, naxis=3):
     Zmin = np.array(Zmin)
     Zmax = np.array(Zmax)        
         
-    for ind, tid in enumerate(IDs):
-        if naxis==2:
-           pstamp = np.copy(labels[Ymin[ind]:Ymax[ind],Xmin[ind]:Xmax[ind]])
-        elif naxis==3:
+    if naxis==3:
+     for ind, tid in enumerate(IDs):
            pstamp = np.copy(labels[Zmin[ind]:Zmax[ind],Ymin[ind]:Ymax[ind],Xmin[ind]:Xmax[ind]])
             
-        Nspat.append(calc_xyarea(pstamp,tid))
+     Nspat.append(calc_xyarea(pstamp,tid))
     
     Nspat = np.array(Nspat)
     Nz = Zmax-Zmin    #This should be right without a +1
     
     if naxis==2:
-       table = Table([IDs, Nvox, Nspat, Xcent, Ycent, Xmin, Xmax, Ymin, Ymax], \
-            names=('ID', 'Nvox', 'Nspat', 'Xcent', 'Ycent', 'Xmin', 'Xmax', 'Ymin', 'Ymax'))
+       table = Table([IDs, Nvox, Xcent, Ycent, Xmin, Xmax, Ymin, Ymax], \
+            names=('ID', 'Npix', 'Xcent', 'Ycent', 'Xmin', 'Xmax', 'Ymin', 'Ymax'))
     elif naxis==3:
        table = Table([IDs, Nvox, Nspat, Nz, Xcent, Ycent, Zcent, Xmin, Xmax, Ymin, Ymax, Zmin, Zmax], \
             names=('ID', 'Nvox', 'Nspat', 'Nz', 'Xcent', 'Ycent', 'Zcent', 'Xmin', 'Xmax', 'Ymin', 'Ymax', 'Zmin', 'Zmax'))
@@ -375,7 +373,7 @@ def calc_xyarea(pstamp, tid):
     return np.sum((img==tid))
     
 
-def cleaning(catalogue, labels_out, mindz=1, maxdz=200, minvox=1, minarea=3):
+def cleaning(catalogue, labels_out, mindz=1, maxdz=200, minvox=1, minarea=1):
     
     #If error is raised, it means dz is not available, i.e. the data is 2D
     try:
@@ -383,7 +381,7 @@ def cleaning(catalogue, labels_out, mindz=1, maxdz=200, minvox=1, minarea=3):
       keep = (catalogue['Nvox']>=minvox) & (dz>=mindz) & (dz<=maxdz) & (catalogue['Nspat']>=minarea)
       naxis = 3
     except:
-      keep = (catalogue['Nspat']>=minarea)
+      keep = (catalogue['Npix']>=np.nanmax([minvox, minarea]))
       naxis = 2
     
     remove = np.logical_not(keep)
@@ -473,7 +471,7 @@ def compute_photometry(catalogue, cube, var, labelsCube):
 
 def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None, extcub=0, extvar=0, \
                   SNthreshold=2, maskspedge=0, spatsig=2, specsig=0, usefft=False, connectivity=26, \
-                  mindz=1, maxdz=200, minvox = 1, minarea=3, zmin=None, zmax=None, lmin=None, lmax=None, outdir='./', \
+                  mindz=1, maxdz=200, minvox = 1, minarea=1, zmin=None, zmax=None, lmin=None, lmax=None, outdir='./', \
                   writelabels=False, writesmdata=False, writesmvar=False, writesmsnr=False, writesubcube=False):
 
     
@@ -671,10 +669,10 @@ def main():
    
     grpcln = parser.add_argument_group('Cleaning arguments')
     
-    grpcln.add_argument('--minvox',    default= 1,        type=int, help='Minimum number of connected voxels for a source to be in the final catalogue.')
-    grpcln.add_argument('--mindz',     default= 1,        type=int, help='Minimum number of connected voxels in spectral direction for a source to be in the final catalogue.')
-    grpcln.add_argument('--maxdz',     default= 200,      type=int, help='Maximum number of connected voxels in spectral direction for a source to be in the final catalogue.')
-    grpcln.add_argument('--minarea',   default= 3,        type=int, help='Minimum number of connected voxels in projected spatial direction for a source to be in the final catalogue.')
+    grpcln.add_argument('--minvox',    default= 1,        type=int, help='Minimum number of connected voxels (3D)/pixels (2D) for a source to be in the final catalogue. For 2D data this argument has priority over minarea')
+    grpcln.add_argument('--mindz',     default= 1,        type=int, help='Minimum number of connected voxels in spectral direction for a source to be in the final catalogue. Only valid for 3D data.')
+    grpcln.add_argument('--maxdz',     default= 200,      type=int, help='Maximum number of connected voxels in spectral direction for a source to be in the final catalogue. Only valid for 3D data.')
+    grpcln.add_argument('--minarea',   default= 1,        type=int, help='Minimum number of connected projected spatial voxels (3D)/pixels (2D) for a source to be in the final catalogue.')
     
     grpout = parser.add_argument_group('Output control arguments')
     
