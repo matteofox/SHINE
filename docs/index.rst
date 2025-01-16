@@ -144,10 +144,11 @@ SHINE can be used also in a Python code.
 
 
 **Basic Usage for 3D data:**
+
 .. code-block:: python
 
+    from astropy.table import Table
     import SHINE
-    import Make_Im_SHINE
 
     #In this case all the cube is used to perform the extraction.
 
@@ -156,15 +157,18 @@ SHINE can be used also in a Python code.
 
     #In this case only a slice of the cube is used to perform the extraction. The argument zmin and zmax are set (or lmin and lmax in Å if a wavelength reconstruction is possible with the keywords of the cube).
 
-    SHINE.runextraction('../Data/CUBE.fits', '../Data/VARIANCE.fits', zmin=40, zmax=100, snthreshold=2, spatsmooth=4, minvox = 3000, minarea=1000, mask2d='../Data/2D_MASK.fits', mask2dpost='../Data/2D_MASK_post.fits', outdir='../Outdir/', writelabels=True, maskspedge=20, writesmdata=True, writesmsnr=True)
+    SHINE.runextraction('../Data/CUBE.fits', '../Data/VARIANCE.fits', zmin=40, zmax=100, snthreshold=2, spatsmooth=4, minvox = 3000, minarea=1000, maskspedge=20, mask2d='../Data/2D_MASK.fits', mask2dpost='../Data/2D_MASK_post.fits', outdir='../Outdir/', writelabels=True, writesmdata=True, writesmsnr=True)
+
+
+    
         
 
 
 **Basic Usage for 2D data:**
 .. code-block:: python
 
+    from astropy.table import Table
     import SHINE
-    import Make_Im_SHINE
 
     SHINE.runextraction('../Data/IMAGE.fits', '../Data/VARIMAGE.fits', connectivity=8, snthreshold=3, spatsmooth=1, minvox = 40, maskspedge=20, outdir='../Outdir/', writelabels=True)
 
