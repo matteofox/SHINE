@@ -33,6 +33,8 @@ except:
     print('ERROR: This code requires the cc3d package. Please install the package using "pip install connected-components-3d" and try again')
     exit()
 
+class SHINEWarning(UserWarning):
+      pass
     
 #Author MF
 def filter_cube(cube, spatsig=2, specsig=0, isvar=False, usefft=False):
@@ -440,11 +442,18 @@ def compute_photometry(catalogue, cube, var, labelsCube):
     flux     = np.zeros_like(catalogue['ID'], dtype=float)
     flux_err = np.zeros_like(catalogue['ID'], dtype=float)
     
+    naxis = len(np.shape(cube))
+    
     for ind, tid in enumerate(catalogue['ID']): 
         
-        pstamplabel = labelsCube[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
-        pstampcube  =       cube[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
-        pstampvar   =        var[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
+        if naxis==2:
+          pstamplabel = labelsCube[catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
+          pstampcube  =       cube[catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
+          pstampvar   =        var[catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
+        elif naxis==3:
+          pstamplabel = labelsCube[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
+          pstampcube  =       cube[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
+          pstampvar   =        var[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
         
         okind = (pstamplabel==tid)
         
@@ -465,7 +474,7 @@ def compute_photometry(catalogue, cube, var, labelsCube):
 def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None, extcub=0, extvar=0, \
                   SNthreshold=2, maskspedge=0, spatsig=2, specsig=0, usefft=False, connectivity=26, \
                   mindz=1, maxdz=200, minvox = 1, minarea=3, zmin=None, zmax=None, lmin=None, lmax=None, outdir='./', \
-                  writelabels=False, writesmcube=False, writesmvar=False, writesmsnrcube=False, writesubcube=False):
+                  writelabels=False, writesmdata=False, writesmvar=False, writesmsnr=False, writesubcube=False):
 
     
     hducube      = fits.open(fcube)
@@ -475,7 +484,6 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
     varfilename  = Path(fvariance).stem
     
     naxis = len(hducube[extcub].data.shape)
-    print(naxis)
     
     #find edges
     edge_ima        = find_nan_edges(hducube[extcub].data, extend=maskspedge)
@@ -492,19 +500,30 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
         
     
     #******************************************************************************************
-    #step 0: create a subcube (in wavelength) of the original cube, if necessary
+    #step 0: create a subcube (in wavelength) of the original cube, if necessary and if data is 3D
     #******************************************************************************************
-    if zmin and zmax is not None:
+    if naxis==3:
+      
+      if zmin and zmax is not None:
         cube, newhduhead  = subcube(cube=cube, datahead=hduhead, filename=cubefilename, outdir=outdir, zmin=zmin, zmax=zmax, writesubcube=writesubcube)
         var, _   = subcube(cube=var,  datahead=hduhead, filename=varfilename,  outdir=outdir, zmin=zmin, zmax=zmax, writesubcube=writesubcube)
-    elif lmin and lmax is not None:
+      elif lmin and lmax is not None:
         cube, newhduhead = subcube(cube=cube, datahead=hduhead, filename=cubefilename, outdir=outdir, lmin=lmin, lmax=lmax, writesubcube=writesubcube)
         var, _  = subcube(cube=var, datahead=hduhead, filename=varfilename, outdir=outdir, lmin=lmin, lmax=lmax, writesubcube=writesubcube)
-    else:
+      else:
         newhduhead = hduhead
         print('... Use the entire cube (without any selection in z direction)')
     
-    
+    elif naxis==2:
+      #Not elegant but necessary to conform to the specifications for 3D data
+      newhduhead = hduhead
+
+      if zmin or zmax is not None:
+        warnings.warn('Zmin and/or Zmax arguments have been specified on a 2D input dataset. These arguments will be disregarded in the run.', SHINEWarning)
+      elif lmin or lmax is not None:
+         warnings.warn('Lmin and/or Lmax arguments have been specified on a 2D input dataset. These arguments will be disregarded in the run.', SHINEWarning)
+      
+       
     #******************************************************************************************
     #step 1: filtering the cube and the associated variance using a Gaussian kernel
     #******************************************************************************************
@@ -589,8 +608,9 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
     
     headout['XSMOOTH'] = xsig
     headout['YSMOOTH'] = ysig
-       
-    headout['ZSMOOTH'] = specsig
+    if naxis==3:
+      headout['ZSMOOTH'] = specsig
+    
     headout['SNTHRES'] = SNthreshold
     
     
@@ -598,7 +618,7 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
         hduout = fits.PrimaryHDU(labels_cln, header = headout)
         hduout.writeto(outdir+f'/{cubefilename}.LABELS_out.fits', overwrite=True)
             
-    if writesmcube:
+    if writesmdata:
         hduout = fits.PrimaryHDU(cubeF, header = headout)
         hduout.writeto(outdir+f'/{cubefilename}.FILTER_out.fits', overwrite=True)
     
@@ -606,9 +626,9 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
         hduout = fits.PrimaryHDU(varF, header = headout)
         hduout.writeto(outdir+f'/{varfilename}.FILTER_out.fits', overwrite=True)
     
-    if writesmsnrcube:
+    if writesmsnr:
         hduout = fits.PrimaryHDU(snrcube, header = headout)
-        hduout.writeto(outdir+f'/{cubefilename}.SNRcubeF_out.fits', overwrite=True)
+        hduout.writeto(outdir+f'/{cubefilename}.FILTERSNR_out.fits', overwrite=True)
         
 
 def main():
@@ -632,10 +652,10 @@ def main():
     grpinp.add_argument('--mask3d',    default= None,  help='Path of an optional three dimesional mask. Valid only for 3D data. NOT IMPLEMENTED YET.')
     grpinp.add_argument('--extcub',    default= 0, type=int, help='Specifies the HDU index in the FITS file cube to use for the data cube extraction.')
     grpinp.add_argument('--extvar',    default= 0, type=int, help='Specifies the HDU index in the FITS file variance to use for the cube extraction.')
-    grpinp.add_argument('--zmin',      default= None, type=int, help='If selecting the cube and the variance: initial pixel in z direction (from 0).')
-    grpinp.add_argument('--zmax',      default= None, type=int, help='If selecting the cube and the variance: final pixel in z direction (from 0).')
-    grpinp.add_argument('--lmin',      default= None, type=float, help='If selecting the cube and the variance: initial wavelength in z direction (in Angstrom).')
-    grpinp.add_argument('--lmax',      default= None, type=float, help='If selecting the cube and the variance: final wavelength in z direction (in Angstrom).')
+    grpinp.add_argument('--zmin',      default= None, type=int, help='If selecting the cube and the variance: initial pixel in z direction (from 0). Only valid for 3D data.')
+    grpinp.add_argument('--zmax',      default= None, type=int, help='If selecting the cube and the variance: final pixel in z direction (from 0). Only valid for 3D data.')
+    grpinp.add_argument('--lmin',      default= None, type=float, help='If selecting the cube and the variance: initial wavelength in z direction (in Angstrom). Only valid for 3D data.')
+    grpinp.add_argument('--lmax',      default= None, type=float, help='If selecting the cube and the variance: final wavelength in z direction (in Angstrom). Only valid for 3D data.')
     
     
     grpext = parser.add_argument_group('Extraction arguments')
@@ -660,9 +680,9 @@ def main():
     
     grpout.add_argument('--outdir',              default='./',        help='Output directory path.')
     grpout.add_argument('--writelabels',         action='store_true', help='If set, write labels cube.')
-    grpout.add_argument('--writesmcube',         action='store_true', help='If set, write the smoothed cube.')
+    grpout.add_argument('--writesmdata',         action='store_true', help='If set, write the smoothed cube.')
     grpout.add_argument('--writesmvar',          action='store_true', help='If set, write the smoothed variance.')
-    grpout.add_argument('--writesmsnrcube',      action='store_true', help='If set, write the S/N smoothed cube.')
+    grpout.add_argument('--writesmsnr',          action='store_true', help='If set, write the S/N smoothed cube.')
     grpout.add_argument('--writesubcube',        action='store_true', help='If set and used, write the subcubes (cube and variance).')
     
     #...and more to come
@@ -679,10 +699,11 @@ def main():
     
     runextraction(args.data, args.vardata, \
     fmask2D = args.mask2d, fmask2Dpost = args.mask2dpost, fmask3D = args.mask3d, extcub=args.extcub, extvar=args.extvar, \
-    spatsig = spatsig, specsig=args.specsmooth, usefft=args.usefftconv, SNthreshold=args.snthresh, connectivity = args.connectivity, \
+    zmin = args.zmin, zmax=args.zmax, lmin=args.lmin, lmax=args.lmax, spatsig = spatsig, specsig=args.specsmooth, \
+    usefft=args.usefftconv, SNthreshold=args.snthresh, connectivity = args.connectivity, \
     maskspedge=args.maskspedge, mindz = args.mindz, maxdz=args.maxdz, minvox=args.minvox, minarea=args.minarea, \
-    outdir=args.outdir, writelabels=args.writelabels, writesmcube=args.writesmcube, \
-    writesmvar=args.writesmvar, writesmsnrcube=args.writesmsnrcube)
+    outdir=args.outdir, writelabels=args.writelabels, writesmdata=args.writesmdata, \
+    writesmvar=args.writesmvar, writesmsnr=args.writesmsnr)
 
 if __name__ == "__main__":
    
