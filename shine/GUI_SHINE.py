@@ -228,7 +228,7 @@ class GUI_SHINE:
         lmax       = self.entry_cutlmax.get()
 
         # Collect extraction arguments
-        snthresh     = self.entry_snthresh.get()
+        snthreshold  = self.entry_snthresh.get()
         spatsmooth   = self.entry_spatsmooth.get()
         spatsmoothX  = self.entry_spatsmoothX.get()
         spatsmoothY  = self.entry_spatsmoothY.get()
@@ -257,7 +257,7 @@ class GUI_SHINE:
             "python", "SHINE.py",
             data, vardata,
             f"--extdata={extcub}", f"--extvardata={extvar}",
-            f"--snthresh={snthresh}", f"--spatsmooth={spatsmooth}",
+            f"--snthreshold={snthreshold}", f"--spatsmooth={spatsmooth}",
             f"--connectivity={connectivity}", f"--maskspedge={maskspatedge}",
             f"--minvox={minvox}", f"--mindz={mindz}", f"--maxdz={maxdz}", f"--minarea={minarea}",
         ]

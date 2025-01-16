@@ -37,22 +37,21 @@ class SHINEWarning(UserWarning):
       pass
     
 #Author MF
-def filter_cube(cube, spatsig=2, specsig=0, isvar=False, usefft=False):
+def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
     
     try:
-        dummy = len(spatsig)
+        dummy = len(spatsmooth)
     except:
-        spatsig = [spatsig]
+        spatsmooth = [spatsmooth]
 
-    if len(spatsig) == 1:
-        ysig = spatsig[0]
-        xsig = spatsig[0]
-    elif len(spatsig) > 1 and len(spatsig) <= 2:
-        ysig = spatsig[1]
-        xsig = spatsig[0]
+    if len(spatsmooth) == 1:
+        ysig = spatsmooth[0]
+        xsig = spatsmooth[0]
+    elif len(spatsmooth) > 1 and len(spatsmooth) <= 2:
+        ysig = spatsmooth[1]
+        xsig = spatsmooth[0]
     else:
-        print('Error: the array of spatial smoothing kernels can have only 1 or 2 elements')
-        return 0
+        raise ValueError('Error: the spatial smoothing kernels can be an integer or an array with 1 or 2 elements')
 
     # Make a copy
     SMcube = np.copy(cube)
@@ -93,7 +92,7 @@ def filter_cube(cube, spatsig=2, specsig=0, isvar=False, usefft=False):
             normalize = True
             nan_treatment = 'interpolate'
 
-        print('... Filtering the {} using XY-axis gaussian kernel of size {} pix'.format(label, spatsig))
+        print('... Filtering the {} using XY-axis gaussian kernel of size {} pix'.format(label, spatsmooth))
 
         for i in np.arange(cubsize[0]):
             SMcube[i, ...] = myconv(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
@@ -475,7 +474,7 @@ def compute_photometry(catalogue, cube, var, labelsCube):
 
 
 def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, extdata=0, extvardata=0, \
-                  SNthreshold=2, maskspedge=0, spatsig=2, specsig=0, usefft=False, connectivity=26, \
+                  snthreshold=2, maskspedge=0, spatsmooth=2, specsig=0, usefft=False, connectivity=26, \
                   mindz=1, maxdz=200, minvox = 1, minarea=1, zmin=None, zmax=None, lmin=None, lmax=None, outdir='./', \
                   writelabels=False, writesmdata=False, writesmvar=False, writesmsnr=False, writesubcube=False):
 
@@ -535,8 +534,8 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     #******************************************************************************************
     #step 1: filtering the cube and the associated variance using a Gaussian kernel
     #******************************************************************************************
-    cubeF = filter_cube(cube, spatsig=spatsig, specsig=specsig, usefft=usefft)
-    varF  = filter_cube(var,  spatsig=spatsig, specsig=specsig, usefft=usefft, isvar=True)
+    cubeF = filter_cube(cube, spatsmooth=spatsmooth, specsig=specsig, usefft=usefft)
+    varF  = filter_cube(var,  spatsmooth=spatsmooth, specsig=specsig, usefft=usefft, isvar=True)
     
     hducube.close()
     hduvar.close()
@@ -545,7 +544,7 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     #******************************************************************************************
     #step 2: extract the threshold cube
     #******************************************************************************************
-    thcube, snrcube = threshold_cube(cubeF, varF, threshold=SNthreshold, maskedge=maskspedge, edge_ima=1-edge_ima)
+    thcube, snrcube = threshold_cube(cubeF, varF, threshold=snthreshold, maskedge=maskspedge, edge_ima=1-edge_ima)
         
         
     #*********************************************************************************************
@@ -603,23 +602,23 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     
     
     try:
-        dummy = len(spatsig)
+        dummy = len(spatsmooth)
     except:
-        spatsig = [spatsig]
+        spatsmooth = [spatsmooth]
 
-    if len(spatsig) == 1:
-        ysig = spatsig[0]
-        xsig = spatsig[0]
-    elif len(spatsig) > 1 and len(spatsig) <= 2:
-        ysig = spatsig[1]
-        xsig = spatsig[0]
+    if len(spatsmooth) == 1:
+        ysig = spatsmooth[0]
+        xsig = spatsmooth[0]
+    elif len(spatsmooth) > 1 and len(spatsmooth) <= 2:
+        ysig = spatsmooth[1]
+        xsig = spatsmooth[0]
     
     headout['XSMOOTH'] = xsig
     headout['YSMOOTH'] = ysig
     if naxis==3:
       headout['ZSMOOTH'] = specsig
     
-    headout['SNTHRES'] = SNthreshold
+    headout['SNTHRES'] = snthreshold
     
     
     if writelabels:
@@ -668,7 +667,7 @@ def main():
     
     grpext = parser.add_argument_group('Extraction arguments')
     
-    grpext.add_argument('--snthresh',     default= 2.,     type=float, help='The SNR of voxels to be included in the extraction.')
+    grpext.add_argument('--snthreshold',     default= 2.,     type=float, help='The SNR of voxels to be included in the extraction.')
     grpext.add_argument('--spatsmooth',   default= 0.,     type=float, help='Gaussian Sigma of the spatial convolution kernel applied in X and Y.')
     grpext.add_argument('--spatsmoothX',  default= None,   help='Gaussian Sigma of the spatial convolution kernel applied in X. If set, this has priority over spatsmooth.')
     grpext.add_argument('--spatsmoothY',  default= None,   help='Gaussian Sigma of the spatial convolution kernel applied in Y. If set, this has priority over spatsmooth.')
@@ -707,8 +706,8 @@ def main():
     
     runextraction(args.data, args.vardata, \
     mask2d = args.mask2d, mask2dpost = args.mask2dpost, fmask3D = args.mask3d, extdata=args.extdata, extvardata=args.extvardata, \
-    zmin = args.zmin, zmax=args.zmax, lmin=args.lmin, lmax=args.lmax, spatsig = spatsig, specsig=args.specsmooth, \
-    usefft=args.usefftconv, SNthreshold=args.snthresh, connectivity = args.connectivity, \
+    zmin = args.zmin, zmax=args.zmax, lmin=args.lmin, lmax=args.lmax, spatsmooth = spatsig, specsig=args.specsmooth, \
+    usefft=args.usefftconv, snthreshold=args.snthreshold, connectivity = args.connectivity, \
     maskspedge=args.maskspedge, mindz = args.mindz, maxdz=args.maxdz, minvox=args.minvox, minarea=args.minarea, \
     outdir=args.outdir, writelabels=args.writelabels, writesmdata=args.writesmdata, \
     writesmvar=args.writesmvar, writesmsnr=args.writesmsnr)
