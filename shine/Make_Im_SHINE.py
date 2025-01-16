@@ -142,7 +142,7 @@ def Make_Im_SHINE(cube, labelsCube=None, Id=[-1], extcub=0, extlabels=0, itype='
     
     if writeout:
         
-        hduout_img = fits.PrimaryHDU(image[np.newaxis,:,:])
+        hduout_img = fits.PrimaryHDU(image) #[np.newaxis,:,:]
         
         #Edit the header
         headout = hduout_img.header
@@ -153,11 +153,11 @@ def Make_Im_SHINE(cube, labelsCube=None, Id=[-1], extcub=0, extlabels=0, itype='
                 headout[key] = hduhead[key]
             else:
                 if key == 'CDELT1':  
-                    if 'CD1_D1' in hduhead:
-                        headout[key] = hduhead['CD1_D1']
+                    if 'CD1_1' in hduhead:
+                        headout[key] = hduhead['CD1_1']
                 elif key == 'CDELT2':  
-                    if 'CD2_D2' in hduhead:
-                        headout[key] = hduhead['CD2_D2']
+                    if 'CD2_2' in hduhead:
+                        headout[key] = hduhead['CD2_2']
         
         if itype == 'flux':
             headout['BUNIT'] = '1e-18 erg cm^-2 s^-1 arcsec^-2'
@@ -194,7 +194,7 @@ def main():
     grpinp.add_argument('--itype',         default= 'flux', help='Type of image to produce: <flux>, <mean> or <median>')
     grpinp.add_argument('--extcub',        default= 0, type=int, help='Extension including science data')
     grpinp.add_argument('--extlabels',     default= 0, type=int, help='Extension including labels data')
-    grpinp.add_argument('--nsl',           default=-2, type=int,  help='Noise layers: select this layer associated with the object in the image. If -1 it selects the mean layer. Use this only if len(Id)=1. Default is -2 -> no noise layers.')
+    grpinp.add_argument('--nsl',           default=-2, type=int, help='Noise layers: select this layer associated with the object in the image. If -1 it selects the mean layer. Use this only if len(Id)=1. Default is -2 -> no noise layers.')
     grpinp.add_argument('--nsladd',        default= 0, type=int, help='Noise layers: how many layers collapse adjacent to the selected one.')
     
     
