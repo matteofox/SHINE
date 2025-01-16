@@ -302,6 +302,7 @@ def generate_catalogue(labels, naxis=3):
     Nvox  = stats['voxel_counts']
     Xcent = stats['centroids'][:,-1]
     Ycent = stats['centroids'][:,-2]
+    #Evaluate Zcent only if 3D data
     if naxis==3:
        Zcent = stats['centroids'][:,-3]
     
@@ -321,6 +322,7 @@ def generate_catalogue(labels, naxis=3):
         Xmax.append(thisbb[-1].stop) 
         Ymin.append(thisbb[-2].start)
         Ymax.append(thisbb[-2].stop)
+        #Evaluate Zbb only if 3D data
         try:
          Zmin.append(thisbb[-3].start)
          Zmax.append(thisbb[-3].stop)
@@ -360,24 +362,40 @@ def generate_catalogue(labels, naxis=3):
 
 def calc_xyarea(pstamp, tid):
     
+    naxis = len(np.shape(pstamp))
+    
     pstamp[pstamp!= tid] = 0
-    img = np.nanmax(pstamp, axis=0)
+    if naxis>2:
+       img = np.nanmax(pstamp, axis=0)
+    else:
+       img = pstamp
     
     return np.sum((img==tid))
     
 
 def cleaning(catalogue, labels_out, mindz=1, maxdz=200, minvox=1, minarea=3):
     
-    dz = catalogue['Nz'] 
-        
-    keep = (catalogue['Nvox']>=minvox) & (dz>=mindz) & (dz<=maxdz) & (catalogue['Nspat']>=minarea)
-    remove = np.logical_not(keep)
+    #If error is raised, it means dz is not available, i.e. the data is 2D
+    try:
+      dz = catalogue['Nz'] 
+      keep = (catalogue['Nvox']>=minvox) & (dz>=mindz) & (dz<=maxdz) & (catalogue['Nspat']>=minarea)
+      naxis = 3
+    except:
+      keep = (catalogue['Nspat']>=minarea)
+      naxis = 2
     
+    remove = np.logical_not(keep)
     removeids = catalogue['ID'][remove]
     
     print('... Cleaning {} objects given the supplied criteria.'.format(len(removeids)))
     
-    for ind, tid in enumerate(removeids): 
+    if naxis==2:
+      for ind, tid in enumerate(removeids): 
+        pstamp = np.copy(labels_out[catalogue['Ymin'][tid]:catalogue['Ymax'][tid],catalogue['Xmin'][tid]:catalogue['Xmax'][tid]])
+        pstamp[pstamp==tid] = 0
+        labels_out[catalogue['Ymin'][tid]:catalogue['Ymax'][tid],catalogue['Xmin'][tid]:catalogue['Xmax'][tid]] = pstamp
+    elif naxis ==3:
+      for ind, tid in enumerate(removeids): 
         pstamp = np.copy(labels_out[catalogue['Zmin'][tid]:catalogue['Zmax'][tid],catalogue['Ymin'][tid]:catalogue['Ymax'][tid],catalogue['Xmin'][tid]:catalogue['Xmax'][tid]])
         pstamp[pstamp==tid] = 0
         labels_out[catalogue['Zmin'][tid]:catalogue['Zmax'][tid],catalogue['Ymin'][tid]:catalogue['Ymax'][tid],catalogue['Xmin'][tid]:catalogue['Xmax'][tid]] = pstamp
@@ -388,6 +406,7 @@ def cleaning(catalogue, labels_out, mindz=1, maxdz=200, minvox=1, minarea=3):
 def add_wcs_struct(catalogue, datahead):
     
     wcs = WCS(datahead)
+    naxis = datahead['NAXIS']
     
     skycoords = utils.pixel_to_skycoord(catalogue['Xcent'], catalogue['Ycent'], wcs=wcs)
 
@@ -396,26 +415,22 @@ def add_wcs_struct(catalogue, datahead):
     
     RA_column  = Column(data=RA, name='RA_deg')
     Dec_column = Column(data=Dec, name='DEC_deg')
-    
-    #Now build wave solution
-    try:
-        try:
-            dlam = datahead['CD3_3']
-        except:
-            dlam = datahead['CDELT3'] 
-                     
-        wave = datahead['CRVAL3']+ np.arange(datahead['NAXIS3'])*dlam
-        
-        Lambda = np.interp(catalogue['Zcent'], np.arange(len(wave)), wave)
-    except:
-        Lambda = np.ones_like(catalogue['Zcent'])
-        
-    
-    Lambda_column = Column(data=Lambda, name='Lambda')  
 
     catalogue.add_column(RA_column)
     catalogue.add_column(Dec_column)
-    catalogue.add_column(Lambda_column)  
+        
+    #Now build wave solution
+    if naxis==3:
+     try:
+        dlam = datahead['CD3_3']
+     except:
+        dlam = datahead['CDELT3'] 
+     finally:
+        wave = datahead['CRVAL3']+ np.arange(datahead['NAXIS3'])*dlam
+        Lambda = np.interp(catalogue['Zcent'], np.arange(len(wave)), wave)
+        Lambda_column = Column(data=Lambda, name='Lambda') 
+        catalogue.add_column(Lambda_column)   
+
     
     return catalogue
 
