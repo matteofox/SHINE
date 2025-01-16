@@ -469,17 +469,17 @@ def compute_photometry(catalogue, cube, var, labelsCube):
     return catalogue     
 
 
-def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None, extcub=0, extvar=0, \
+def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, extcub=0, extvar=0, \
                   SNthreshold=2, maskspedge=0, spatsig=2, specsig=0, usefft=False, connectivity=26, \
                   mindz=1, maxdz=200, minvox = 1, minarea=1, zmin=None, zmax=None, lmin=None, lmax=None, outdir='./', \
                   writelabels=False, writesmdata=False, writesmvar=False, writesmsnr=False, writesubcube=False):
 
     
-    hducube      = fits.open(fcube)
-    hduvar       = fits.open(fvariance)
+    hducube      = fits.open(data)
+    hduvar       = fits.open(vardata)
     hduhead      = hducube[extcub].header
-    cubefilename = Path(fcube).stem
-    varfilename  = Path(fvariance).stem
+    cubefilename = Path(data).stem
+    varfilename  = Path(vardata).stem
     
     naxis = len(hducube[extcub].data.shape)
     
@@ -487,8 +487,8 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
     edge_ima        = find_nan_edges(hducube[extcub].data, extend=maskspedge)
        
           
-    if fmask2D is not None:
-        mask2D = fits.open(fmask2D)[0].data
+    if mask2d is not None:
+        mask2D = fits.open(mask2d)[0].data
         cube = masking_nan(hducube[extcub].data, mask2D)
         #var  = masking_nan(hduvar[extvar].data, mask2D)
         var  = hduvar[extvar].data
@@ -541,8 +541,8 @@ def runextraction(fcube, fvariance, fmask2D=None, fmask2Dpost=None, fmask3D=None
     #*********************************************************************************************
     #step 3: masking the voxels (needs masking again because nans are interpolated when filtering)
     #*********************************************************************************************
-    if fmask2Dpost is not None:
-        mask2Dpost = fits.open(fmask2Dpost)[0].data
+    if mask2dpost is not None:
+        mask2Dpost = fits.open(mask2dpost)[0].data
         cubethresh = masking(thcube, mask2Dpost)
     else:
         cubethresh = thcube
@@ -696,7 +696,7 @@ def main():
         spatsig[1] = args.spatsmoothY
     
     runextraction(args.data, args.vardata, \
-    fmask2D = args.mask2d, fmask2Dpost = args.mask2dpost, fmask3D = args.mask3d, extcub=args.extcub, extvar=args.extvar, \
+    mask2d = args.mask2d, mask2dpost = args.mask2dpost, fmask3D = args.mask3d, extcub=args.extcub, extvar=args.extvar, \
     zmin = args.zmin, zmax=args.zmax, lmin=args.lmin, lmax=args.lmax, spatsig = spatsig, specsig=args.specsmooth, \
     usefft=args.usefftconv, SNthreshold=args.snthresh, connectivity = args.connectivity, \
     maskspedge=args.maskspedge, mindz = args.mindz, maxdz=args.maxdz, minvox=args.minvox, minarea=args.minarea, \
