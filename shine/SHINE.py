@@ -163,28 +163,36 @@ def threshold_cube(cube, var, threshold=0.5, maskedge=0, edge_ima=None):
 
 
 
-def masking(cube_labels, mask):
-    print('... Masking the labels cube')
+def masking(data, mask):
+    print('... Masking the threshold data')
 
+    
+    naxis = len(np.shape(data))
+    if naxis==2:
+         data = data[np.newaxis, :]
+        
     # Adjust mask dimensions if necessary
-    if np.shape(mask) == np.shape(cube_labels)[1:3]:
+    if np.shape(mask) == np.shape(data)[1:3]:
         mask3d = mask[np.newaxis, :]
     else:
         mask3d = mask
 
     # Identify bad regions where mask is greater than 0
     bad = mask3d[0, ...] > 0
-    nz = np.shape(cube_labels)[0]
+    nz = np.shape(data)[0]
 
     # Replace bad regions with NaN
     for i in np.arange(nz):
-        cube_labels[i, bad] = 0
+        data[i, bad] = 0
         
-    return cube_labels
+    if naxis==2:
+       return data[0,...]
+    else:   
+       return data
 
 
 def masking_nan(data, mask):
-    print('... Masking the cube with nans')
+    print('... Masking the data with nans')
     
     naxis = len(np.shape(data))
     if naxis==2:
@@ -288,7 +296,7 @@ def extract(cube, connectivity=26):
           raise ValueError('Connectivity should be 6, 18, or 26 for 3D cubes. Found {}.'.format(connectivity))
           
     label_cube = cc3d.connected_components(cube, connectivity=connectivity)
-
+    
     return label_cube
 
 
@@ -498,6 +506,7 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     #step 0: create a subcube (in wavelength) of the original cube, if necessary and if data is 3D
     #******************************************************************************************
     if naxis==3:
+        print('... Perform the extraction on a 3D data-cube')
       
       if zmin and zmax is not None:
         cube, newhduhead  = subcube(cube=cube, datahead=hduhead, filename=cubefilename, outdir=outdir, zmin=zmin, zmax=zmax, writesubcube=writesubcube)
@@ -510,6 +519,7 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
         print('... Use the entire cube (without any selection in z direction)')
     
     elif naxis==2:
+      print('... Perform the extraction on a 2D data-image')
       #Not elegant but necessary to conform to the specifications for 3D data
       newhduhead = hduhead
 
@@ -517,7 +527,10 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
         warnings.warn('Zmin and/or Zmax arguments have been specified on a 2D input dataset. These arguments will be disregarded in the run.', SHINEWarning)
       elif lmin or lmax is not None:
          warnings.warn('Lmin and/or Lmax arguments have been specified on a 2D input dataset. These arguments will be disregarded in the run.', SHINEWarning)
-      
+
+    else:
+        raise ValueError('Error: the data dimension is not correct. It can be a 2D or 3D dataset.')
+          
        
     #******************************************************************************************
     #step 1: filtering the cube and the associated variance using a Gaussian kernel
