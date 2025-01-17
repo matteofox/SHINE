@@ -196,9 +196,15 @@ def masking_nan(data, mask):
     naxis = len(np.shape(data))
     if naxis==2:
        data = data[np.newaxis, :]
+
+    # Adjust mask dimensions if necessary
+    if np.shape(mask) == np.shape(data)[1:3]:
+        mask3d = mask[np.newaxis, :]
+    else:
+        mask3d = mask
     
     # Identify bad regions where mask is greater than 0
-    bad = mask[0, ...] > 0
+    bad = mask3d[0, ...] > 0
     nz = np.shape(data)[0]
 
     # Replace bad regions with NaN
