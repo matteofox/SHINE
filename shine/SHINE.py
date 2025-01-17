@@ -64,6 +64,12 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
        cube   = cube[np.newaxis,:]
        cubsize = np.shape(cube)
 
+    # Choose convolution method
+    if usefft:
+        myconv = convolve_fft
+    else:
+        myconv = convolve
+
     if ysig > 0. and xsig > 0.:
         spatkern = Gaussian2DKernel(xsig, ysig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1))
 
@@ -89,13 +95,8 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
         print('... Filtering the {} using XY-axis gaussian kernel of size {} pix'.format(label, spatsmooth))
 
         for i in np.arange(cubsize[0]):
-            # Choose convolution method
-            if usefft:
-               SMcube[i, ...] = convolve_fft(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment, allow_huge=True)
-            else:
-               SMcube[i, ...] = convolve(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
-            
-           
+            SMcube[i, ...] = myconv(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
+
     if specsig > 0. and naxis==3:
         print('... Filtering the cube using Z-axis gaussian kernel of size {}'.format(specsig))
         specsigel = Gaussian1DKernel(specsig)
@@ -339,7 +340,7 @@ def generate_catalogue(labels, naxis=3):
          Zmax.append(thisbb[-3].stop)
         except:
          pass
-        
+	
     Nspat = []
     
     Xmin = np.array(Xmin)
@@ -353,7 +354,7 @@ def generate_catalogue(labels, naxis=3):
      for ind, tid in enumerate(IDs):
            pstamp = np.copy(labels[Zmin[ind]:Zmax[ind],Ymin[ind]:Ymax[ind],Xmin[ind]:Xmax[ind]])
             
-     Nspat.append(calc_xyarea(pstamp,tid))
+           Nspat.append(calc_xyarea(pstamp,tid))
     
     Nspat = np.array(Nspat)
     Nz = Zmax-Zmin    #This should be right without a +1
@@ -361,7 +362,7 @@ def generate_catalogue(labels, naxis=3):
     if naxis==2:
        table = Table([IDs, Nvox, Xcent, Ycent, Xmin, Xmax, Ymin, Ymax], \
             names=('ID', 'Npix', 'Xcent', 'Ycent', 'Xmin', 'Xmax', 'Ymin', 'Ymax'))
-    elif naxis==3:
+    elif naxis==3:       
        table = Table([IDs, Nvox, Nspat, Nz, Xcent, Ycent, Zcent, Xmin, Xmax, Ymin, Ymax, Zmin, Zmax], \
             names=('ID', 'Nvox', 'Nspat', 'Nz', 'Xcent', 'Ycent', 'Zcent', 'Xmin', 'Xmax', 'Ymin', 'Ymax', 'Zmin', 'Zmax'))
     
