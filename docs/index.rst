@@ -226,7 +226,7 @@ Run the GUI using:
 
 The GUI is simple and allows the user to select input data (Cube/Image, Variance Cube/Image, and optional 2D masks) either by entering the path into the white cells or by clicking the ``Browse`` button to navigate through directories. Similarly, the user can specify the output directory.
 
-.. figure:: /docs/_static/GUI_image.png
+.. figure:: /_static/GUI_image.png
    :width: 80%
    :align: left
    :alt: GUI window after ``python GUI_SHINE.py``.
