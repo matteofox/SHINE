@@ -183,7 +183,7 @@ SHINE can be used also in a Python code. The parameters that can be used are the
 
 
 
-.. figure:: /Images/Catalogue_3Dextraction.png
+.. figure:: /docs/_static/Catalogue_3Dextraction.png
    :width: 80%
    :align: left
    :alt: Catalogue output from 3D extraction.
@@ -208,7 +208,7 @@ SHINE can be used also in a Python code. The parameters that can be used are the
 
 
 
-.. figure:: /_static/Catalogue_2Dextraction.png
+.. figure:: /docs/_static/Catalogue_2Dextraction.png
    :width: 80%
    :align: left
    :alt: Catalogue output from 2D extraction.
@@ -226,7 +226,7 @@ Run the GUI using:
 
 The GUI is simple and allows the user to select input data (Cube/Image, Variance Cube/Image, and optional 2D masks) either by entering the path into the white cells or by clicking the ``Browse`` button to navigate through directories. Similarly, the user can specify the output directory.
 
-.. figure:: /_static/GUI_image.png
+.. figure:: /docs/_static/GUI_image.png
    :width: 80%
    :align: left
    :alt: GUI window after ``python GUI_SHINE.py``.
@@ -239,7 +239,7 @@ All implemented parameters can be adjusted according to the desired extraction, 
 
 Once the parameters are set, the user must click on ``Run Script`` to start the extraction. The process takes approximately few minutes for cubes and few seconds for images (faster with FFT convolution), after which the output summary is displayed in a new window. The user can then close the GUI and begin analyzing the data products.
 
-.. figure:: /_static/Success_GUI_image.png
+.. figure:: /docs/_static/Success_GUI_image.png
    :width: 40%
    :align: left
    :alt: Output summary of successful extraction (Example).
