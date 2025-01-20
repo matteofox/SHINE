@@ -12,7 +12,7 @@ class GUI_SHINE:
     def __init__(self, root):
         """Initialize the GUI."""
         self.root = root
-        self.root.title("SHINE (v1 version)")
+        self.root.title("SHINE (v1.1 version)")
         
         # Set minimum size for the window
         self.root.geometry("1200x900")  # Width x Height
@@ -28,8 +28,8 @@ class GUI_SHINE:
         
         
         # Icon as png
-        logo = PhotoImage(file="Icon.png")  
-        self.root.iconphoto(False, logo)  
+        #logo = PhotoImage(file="../docs/_static/logo.png")
+        #self.root.iconphoto(False, logo)
 
         
 

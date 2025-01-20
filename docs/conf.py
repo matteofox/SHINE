@@ -11,7 +11,7 @@ import os
 project = 'SHINE'
 copyright = '2024, Matteo Fossati, Davide Tornotti'
 author = 'Matteo Fossati, Davide Tornotti'
-release = '1.0'
+release = '1.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -45,7 +45,9 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 html_theme = "sphinx_rtd_theme"
 
 
-#html_static_path = ['_static']
+html_static_path = ['_static']
+
+html_logo = '_static/logo.png'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'shinedoc'
@@ -55,3 +57,5 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),  # Python documentation
     'numpy': ('https://numpy.org/doc/stable', None),  # NumPy documentation
 }
+
+

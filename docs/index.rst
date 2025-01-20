@@ -10,7 +10,7 @@ Documentation of SHINE
 
 **Authors:** Matteo Fossati, Davide Tornotti  
 
-**Date:**  13/12/2024
+**Date:**  20/01/2025
 
 .. contents::
    :depth: 2
@@ -62,12 +62,12 @@ Usage of SHINE and tools
 
 The extraction is performed using ``SHINE``. The basic idea behind the code is as follows:
 
-- (Optional, applicable to 3D data only) Select a portion of the cube (in the z-direction or wavelength direction) where the user wants to focus the extraction.
-- Mask certain voxels using a user-provided mask (e.g., continuum sources).
-- Spatially filter the cube/image and the associated 2D or 3D variance using a user-defined kernel dimension.
-- Apply a threshold to the cube/image based on the user-defined S/N threshold.
-- Group connected voxels (3D)/pixels (2D) that meet the S/N threshold and other user-defined parameters.
-- Generate and save the catalog along with the labeled cube/image.
+1. (Optional, applicable to 3D data only) Select a portion of the cube (in the z-direction or wavelength direction) where the user wants to focus the extraction.
+2. Mask certain voxels using a user-provided mask (e.g., continuum sources).
+3. Spatially filter the cube/image and the associated 2D or 3D variance using a user-defined kernel dimension.
+4. Apply a threshold to the cube/image based on the user-defined S/N threshold.
+5. Group connected voxels (3D)/pixels (2D) that meet the S/N threshold and other user-defined parameters.
+6. Generate and save the catalog along with the labeled cube/image.
 
 For 3D data only, it is possible to use Make_Im_SHINE to create the associated image by collapsing the voxels in the z-direction using the labeled cube.
 This tool is designed to create three different types of images (``flux``, ``mean`` or ``median``) both selecting only certain voxels based on a 3D mask with associated Ids (e.g. the output labels cube of ``SHINE``, thus creating an extraction image) and all the voxels (thus creating a narrow band image). If ``flux`` is selected, the units of the output image are :math:`1 \times 10^{-18} \, \mathrm{erg \, s^{-1} \, cm^{-2} \, arcsec^{-2}}`.
@@ -208,7 +208,7 @@ SHINE can be used also in a Python code. The parameters that can be used are the
 
 
 
-.. figure:: /Images/Catalogue_2Dextraction.png
+.. figure:: /_static/Catalogue_2Dextraction.png
    :width: 80%
    :align: left
    :alt: Catalogue output from 2D extraction.
@@ -226,7 +226,7 @@ Run the GUI using:
 
 The GUI is simple and allows the user to select input data (Cube/Image, Variance Cube/Image, and optional 2D masks) either by entering the path into the white cells or by clicking the ``Browse`` button to navigate through directories. Similarly, the user can specify the output directory.
 
-.. figure:: /Images/GUI_image.png
+.. figure:: /_static/GUI_image.png
    :width: 80%
    :align: left
    :alt: GUI window after ``python GUI_SHINE.py``.
@@ -235,11 +235,11 @@ The GUI is simple and allows the user to select input data (Cube/Image, Variance
 
 All implemented parameters can be adjusted according to the desired extraction, with default values provided for convenience. Data products can be selected by checking the white cells in the *Output Control Arguments* section. By default, the cube containing the IDs of the identified objects and the catalog are selected.
 
-**Note:** Spectral smoothing is not implemented yet.
+.. warning:: Spectral smoothing is not implemented yet.
 
 Once the parameters are set, the user must click on ``Run Script`` to start the extraction. The process takes approximately few minutes for cubes and few seconds for images (faster with FFT convolution), after which the output summary is displayed in a new window. The user can then close the GUI and begin analyzing the data products.
 
-.. figure:: /Images/Success_GUI_image.png
+.. figure:: /_static/Success_GUI_image.png
    :width: 40%
    :align: left
    :alt: Output summary of successful extraction (Example).
@@ -298,6 +298,26 @@ Run generation of images by command line
 - ``--addname``: Optional suffix to append to the base name of the output file. This string will be added after the default filename (e.g., ``flux`` or other predefined parts) and before the file extension. Useful for distinguishing different versions or types of output files.
 
 
+Run generation of images using Python
+-------------------------------------
+``Make_Im_SHINE.py`` can be also used in a Python code. The parameters that can be used are the arguments described in the previous paragraph.
+
+.. code-block:: python
+
+   import Make_Im_SHINE
+
+   # Make an image using a cube of labels (e.g. the output of SHINE extraction) collapsing only the voxels associated with Id = 45. No pseudo narrow-band image around the object.
+   img = Make_Im_SHINE('../Data/Datacube.fits', labelsCube='../Data/Labelscube.fits', Id=[45], extcub=0, extlabels=0, itype='flux', outdir='../Dataproducts', writeout=True)
+
+   # Make an image using a cube of labels (e.g. the output of SHINE extraction) collapsing only the voxels associated with Id = 45. A pseudo narrow-band image of 5 layers around the mean layer of the object is extracted.
+   img = Make_Im_SHINE('../Data/Datacube.fits', labelsCube='../Data/Labelscube.fits', Id=[45], extcub=0, extlabels=0, itype='flux', outdir='../Dataproducts', writeout=True, nsl=-1, nsladd=2)
+
+   # Make an image using a cube of labels (e.g. the output of SHINE extraction) collapsing all the Ids.
+   img = Make_Im_SHINE('../Data/Datacube.fits', labelsCube='../Data/Labelscube.fits', Id=[-1], extcub=0, extlabels=0, itype='flux', outdir='../Dataproducts', writeout=True)
+
+   # Make a narrow band image, using all the user provided cube. It can be used SHINE.subcube to select the desired slice to collapse.
+   img = Make_Im_SHINE('../Data/Datacube.fits', extcub=0, itype='flux', outdir='../Dataproducts', writeout=True)
+
 .. _changelog:
 
 Changelog
@@ -323,19 +343,15 @@ If you are interested in contributing to the project, please contact us and foll
 API
 ===
 
-This section describes the available functions in the SHINE module.
+This section lists the useful available functions in the SHINE module.
 
-.. autofunction:: shine.SHINE.runextraction
-   :noindex:
+- ``SHINE.runextraction``: This function performs the extraction process using the specified parameters.
 
-This function performs the extraction process using the specified parameters.
+- ``SHINE.subcube``: This function extracts a portion of the cube based on user-specified criteria.
 
-.. autofunction:: shine.SHINE.subcube
-   :noindex:
+- ``SHINE.extract``: This function applies the CC3D connected components algorithm to the cube/image, identifying S/N-based voxels (3D) or pixels (2D) that have been selected.
 
-This function extracts a portion of the cube based on user-specified criteria.
-
-
+- ``SHINE.generate_catalogue``: This function generates a catalogue associated with the labeled cube/image extracted.
 
 License
 =======
