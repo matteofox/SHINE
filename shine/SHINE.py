@@ -17,6 +17,7 @@ from astropy.utils.exceptions import AstropyWarning
 
 from scipy.ndimage import maximum_filter
 from astropy.convolution import convolve, convolve_fft
+from astropy.stats import sigma_clipped_stats
 
 from pathlib import Path
 
@@ -95,8 +96,12 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
         print('... Filtering the {} using XY-axis gaussian kernel of size {} pix'.format(label, spatsmooth))
 
         for i in np.arange(cubsize[0]):
-            SMcube[i, ...] = myconv(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
 
+            if usefft:
+                SMcube[i, ...] = myconv(cube[i, ...], spatkern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
+            else:
+                SMcube[i, ...] = myconv(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
+            
     if specsig > 0. and naxis==3:
         print('... Filtering the cube using Z-axis gaussian kernel of size {}'.format(specsig))
         specsigel = Gaussian1DKernel(specsig)
@@ -479,32 +484,61 @@ def compute_photometry(catalogue, cube, var, labelsCube):
     return catalogue     
 
 
+
+def compute_var(data):
+    
+    mean, median, std = sigma_clipped_stats(data, sigma = 3)
+    vardata = (np.full_like(data, std))**2
+
+    return vardata
+
+
+
+
 def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, extdata=0, extvardata=0, \
                   snthreshold=2, maskspedge=0, spatsmooth=2, specsig=0, usefft=False, connectivity=26, \
                   mindz=1, maxdz=200, minvox = 1, minarea=1, zmin=None, zmax=None, lmin=None, lmax=None, outdir='./', \
-                  writelabels=False, writesmdata=False, writesmvar=False, writesmsnr=False, writesubcube=False):
+                  writelabels=False, writesmdata=False, writesmvar=False, writesmsnr=False, writesubcube=False, writevardata=False):
 
     
     hducube      = fits.open(data)
-    hduvar       = fits.open(vardata)
     hduhead      = hducube[extdata].header
     cubefilename = Path(data).stem
-    varfilename  = Path(vardata).stem
+
+    # read or compute vardata 
+    if isinstance(vardata, (float, int)):  
+        
+        if vardata >= 0:
+            var = np.full_like(hducube[extdata].data, float(vardata))
+            print('... Use the constant user-provided variance')
+        elif vardata == -1:
+            print('... Compute the variance with a sigma-clip algorithm')
+            var = compute_var(hducube[extdata].data)
+        else:
+            raise ValueError('Error: vardata is not a valid number')
+
+        varfilename = cubefilename+'_variance'
+        
+    else:
+        hduvar = fits.open(vardata)
+        var  = hduvar[extvardata].data
+        varfilename  = Path(vardata).stem
+        
+
+    
+    
     
     naxis = len(hducube[extdata].data.shape)
     
     #find edges
-    edge_ima        = find_nan_edges(hducube[extdata].data, extend=maskspedge)
+    edge_ima = find_nan_edges(hducube[extdata].data, extend=maskspedge)
        
           
     if mask2d is not None:
         mask2D = fits.open(mask2d)[0].data
-        cube = masking_nan(hducube[extdata].data, mask2D)
-        #var  = masking_nan(hduvar[extvardata].data, mask2D)
-        var  = hduvar[extvardata].data
+        cube = masking_nan(hducube[extdata].data, mask2D)       
     else:
         cube = hducube[extdata].data
-        var  = hduvar[extvardata].data        
         
     
     #******************************************************************************************
@@ -544,7 +578,9 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     varF  = filter_cube(var,  spatsmooth=spatsmooth, specsig=specsig, usefft=usefft, isvar=True)
     
     hducube.close()
-    hduvar.close()
+
+    if not isinstance(vardata, (float, int)):  
+        hduvar.close()
     
     
     #******************************************************************************************
@@ -642,6 +678,15 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     if writesmsnr:
         hduout = fits.PrimaryHDU(snrcube, header = headout)
         hduout.writeto(outdir+f'/{cubefilename}.FILTERSNR_out.fits', overwrite=True)
+
+    if writevardata:
+
+        if isinstance(vardata, (float, int)):
+            hduout = fits.PrimaryHDU(var, header = headout)
+            hduout.writeto(outdir+f'/{varfilename}.fits', overwrite=True)
+        else:
+            print('... The variance has been provided as fits file. Not saving the file as an output.')
+    
         
 
 def main():
@@ -659,7 +704,7 @@ def main():
     grpinp = parser.add_argument_group('Input control arguments') 
     
     grpinp.add_argument('data',            help='Path of the input data cube/image. Expected to be in extension 0, unless extdata is defined.')
-    grpinp.add_argument('vardata',         help='Path of the variance cube/image.   Expected to be in extension 0, unless extvardata is defined.')
+    grpinp.add_argument('vardata',         help='Path of the variance cube/image.   Expected to be in extension 0, unless extvardata is defined. Instead, if a positive number is provided a constant variance is assumed. If -1, compute the variance from the data with a sigma-clipping algorithm.')
     grpinp.add_argument('--mask2d',        default= None,  help='Path of an optional two dimensional mask to be applied along the wave axis.')
     grpinp.add_argument('--mask2dpost',    default= None,  help='Path of an optional two dimensional mask to be applied after the smoothing along the wave axis.')
     grpinp.add_argument('--mask3d',        default= None,  help='Path of an optional three dimesional mask. Valid only for 3D data. NOT IMPLEMENTED YET.')
@@ -697,7 +742,7 @@ def main():
     grpout.add_argument('--writesmvar',          action='store_true', help='If set, write the smoothed variance.')
     grpout.add_argument('--writesmsnr',          action='store_true', help='If set, write the S/N smoothed cube/image.')
     grpout.add_argument('--writesubcube',        action='store_true', help='If set and used, write the subcubes (cube and variance). Only valid for 3D data.')
-    
+    grpout.add_argument('--writevardata',        action='store_true', help='If vardata is a user-provided constant value or -1 (auto-computed from sigma-clipping) write the variance.')
     #...and more to come
         
     #Parse arguments  
@@ -716,7 +761,7 @@ def main():
     usefft=args.usefftconv, snthreshold=args.snthreshold, connectivity = args.connectivity, \
     maskspedge=args.maskspedge, mindz = args.mindz, maxdz=args.maxdz, minvox=args.minvox, minarea=args.minarea, \
     outdir=args.outdir, writelabels=args.writelabels, writesmdata=args.writesmdata, \
-    writesmvar=args.writesmvar, writesmsnr=args.writesmsnr)
+    writesmvar=args.writesmvar, writesmsnr=args.writesmsnr, writevardata=args.writevardata)
 
 if __name__ == "__main__":
    
