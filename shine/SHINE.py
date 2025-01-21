@@ -508,7 +508,7 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     # read or compute vardata 
     if isinstance(vardata, (float, int)):  
         
-        if vardata >= 0:
+        if vardata > 0:
             var = np.full_like(hducube[extdata].data, float(vardata))
             print('... Use the constant user-provided variance')
         elif vardata == -1:
