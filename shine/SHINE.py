@@ -65,12 +65,6 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
        cube   = cube[np.newaxis,:]
        cubsize = np.shape(cube)
 
-    # Choose convolution method
-    if usefft:
-        myconv = convolve_fft
-    else:
-        myconv = convolve
-
     if ysig > 0. and xsig > 0.:
         spatkern = Gaussian2DKernel(xsig, ysig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1))
 
@@ -96,11 +90,10 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
         print('... Filtering the {} using XY-axis gaussian kernel of size {} pix'.format(label, spatsmooth))
 
         for i in np.arange(cubsize[0]):
-
             if usefft:
-                SMcube[i, ...] = myconv(cube[i, ...], spatkern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
+                SMcube[i, ...] = convolve_fft(cube[i, ...], spatkern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
             else:
-                SMcube[i, ...] = myconv(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
+                SMcube[i, ...] = convolve(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
             
     if specsig > 0. and naxis==3:
         print('... Filtering the cube using Z-axis gaussian kernel of size {}'.format(specsig))
