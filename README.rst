@@ -14,8 +14,9 @@ Links
 Citation
 ~~~~~~~~
 
-A Zenodo upload of a stable version of the code is planned. 
-At present, please cite SHINE as::
+SHINE releases are uploaded on Zenodo and have doi: 10.5281/zenodo.14710518
+
+If you find SHINE useful for your research, please also cite::
 
 \bibitem[Tornotti et al.(2024)]{2024arXiv241206895T} Tornotti, D., Fumagalli, M., Fossati, M., et al.\ 2024, arXiv:2412.06895. doi:10.48550/arXiv.2412.06895
 
