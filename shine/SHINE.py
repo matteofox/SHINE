@@ -97,8 +97,15 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
             
     if specsig > 0. and naxis==3:
         print('... Filtering the cube using Z-axis gaussian kernel of size {}'.format(specsig))
-        specsigel = Gaussian1DKernel(specsig)
-        # Will be implemented
+        speckern = Gaussian1DKernel(specsig)
+        for i in np.arange(cubsize[1]):
+          for j in np.arange(cubsize[2]):
+            if usefft:
+                SMcube[:,i,j] = convolve_fft(SMcube[:,i,j], speckern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
+            else:
+                SMcube[:,i,j] = convolve(SMcube[:,i,j], speckern, normalize_kernel=normalize, nan_treatment=nan_treatment)
+           
+
     elif specsig > 0. and naxis<3:   
         print('... Z-axis filtering requested on non-3D data. No spectral filtering will occurr.')
         
