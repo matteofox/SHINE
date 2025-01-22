@@ -15,7 +15,7 @@ class GUI_SHINE:
         self.root.title("SHINE (v1.1 version)")
         
         # Set minimum size for the window
-        self.root.geometry("1200x900")  # Width x Height
+        self.root.geometry("1200x1000")  # Width x Height
         self.root.minsize(600, 600)
 
         # Configure grid to make it expandable
@@ -28,7 +28,7 @@ class GUI_SHINE:
         
         
         # Icon as png
-        #logo = PhotoImage(file="../docs/_static/logo.png")
+        #logo = PhotoImage(file="logo.png")
         #self.root.iconphoto(False, logo)
 
         
@@ -63,7 +63,7 @@ class GUI_SHINE:
         self.entry_spatsmooth   = self.create_input_row(self.frame_extraction, "Spatial Smoothing (Default=0):", 1, "0")
         self.entry_spatsmoothX  = self.create_input_row(self.frame_extraction, "Smooth X (Optional):", 2)
         self.entry_spatsmoothY  = self.create_input_row(self.frame_extraction, "Smooth Y (Optional):", 3)
-        self.entry_specsmooth   = self.create_input_row(self.frame_extraction, "Spectral Smoothing (Default=0, TBD!):", 4, "0")
+        self.entry_specsmooth   = self.create_input_row(self.frame_extraction, "Spectral Smoothing (Default=0):", 4, "0")
         self.entry_connectivity = self.create_input_row(self.frame_extraction, "Connectivity (Default=26):", 5, "26")
         self.entry_maskspatedge = self.create_input_row(self.frame_extraction, "Mask Spatial Edges (Default=20):", 6, "20")
         self.usefftconv         = tk.BooleanVar()
@@ -88,13 +88,15 @@ class GUI_SHINE:
         self.var_writesmvar     = tk.BooleanVar()
         self.var_writesmsnrcube = tk.BooleanVar()
         self.var_writesubcube   = tk.BooleanVar()  
+        self.var_writevardata   = tk.BooleanVar()
 
         tk.Checkbutton(self.frame_output, text="Write Labels", variable=self.var_writelabels).grid(row=1, column=0, sticky="w")
         tk.Checkbutton(self.frame_output, text="Write Smoothed Cube/Image", variable=self.var_writesmcube).grid(row=2, column=0, sticky="w")
         tk.Checkbutton(self.frame_output, text="Write Smoothed Variance", variable=self.var_writesmvar).grid(row=3, column=0, sticky="w")
         tk.Checkbutton(self.frame_output, text="Write Smoothed S/N Cube/Image", variable=self.var_writesmsnrcube).grid(row=4, column=0, sticky="w")
         tk.Checkbutton(self.frame_output, text="Write Subcube", variable=self.var_writesubcube).grid(row=5, column=0, sticky="w")
-
+        tk.Checkbutton(self.frame_output, text="Write Var Data", variable=self.var_writevardata).grid(row=6, column=0, sticky="w")
+        
         # === Run Button ===
         self.btn_run = tk.Button(root, text="Run Script", command=self.run_script)
         self.btn_run.grid(row=4, column=0, pady=10)
@@ -250,8 +252,8 @@ class GUI_SHINE:
         writesmvar     = self.var_writesmvar.get()
         writesmsnrcube = self.var_writesmsnrcube.get()
         writesubcube   = self.var_writesubcube.get()
-
-
+        writevardata   = self.var_writevardata.get()
+        
         # Construct the command
         command = [
             "python", "SHINE.py",
@@ -261,7 +263,7 @@ class GUI_SHINE:
             f"--connectivity={connectivity}", f"--maskspedge={maskspatedge}",
             f"--minvox={minvox}", f"--mindz={mindz}", f"--maxdz={maxdz}", f"--minarea={minarea}",
         ]
-
+        
         # Add optional arguments
         if mask2d:
             command.append(f"--mask2d={mask2d}")
@@ -302,6 +304,8 @@ class GUI_SHINE:
             command.append("--writesubcube")        
         if outdir:
             command.append(f"--outdir={outdir}")
+        if writevardata:
+            command.append("--writevardata")
 
         # Execute the command
         try:

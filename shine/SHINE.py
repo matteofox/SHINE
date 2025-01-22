@@ -38,7 +38,7 @@ class SHINEWarning(UserWarning):
       pass
     
 #Author MF
-def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
+def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
     
     try:
         dummy = len(spatsmooth)
@@ -90,7 +90,7 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
         print('... Filtering the {} using XY-axis gaussian kernel of size {} pix'.format(label, spatsmooth))
 
         for i in np.arange(cubsize[0]):
-            if usefft:
+            if usefftconv:
                 SMcube[i, ...] = convolve_fft(cube[i, ...], spatkern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
             else:
                 SMcube[i, ...] = convolve(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
@@ -100,7 +100,7 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefft=False):
         speckern = Gaussian1DKernel(specsig)
         for i in np.arange(cubsize[1]):
           for j in np.arange(cubsize[2]):
-            if usefft:
+            if usefftconv:
                 SMcube[:,i,j] = convolve_fft(SMcube[:,i,j], speckern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
             else:
                 SMcube[:,i,j] = convolve(SMcube[:,i,j], speckern, normalize_kernel=normalize, nan_treatment=nan_treatment)
@@ -496,7 +496,7 @@ def compute_var(data):
 
 
 def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, extdata=0, extvardata=0, \
-                  snthreshold=2, maskspedge=0, spatsmooth=2, specsig=0, usefft=False, connectivity=26, \
+                  snthreshold=2, maskspedge=0, spatsmooth=2, specsig=0, usefftconv=False, connectivity=26, \
                   mindz=1, maxdz=200, minvox = 1, minarea=1, zmin=None, zmax=None, lmin=None, lmax=None, outdir='./', \
                   writelabels=False, writesmdata=False, writesmvar=False, writesmsnr=False, writesubcube=False, writevardata=False):
 
@@ -505,8 +505,14 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     hduhead      = hducube[extdata].header
     cubefilename = Path(data).stem
 
-    # read or compute vardata 
-    if isinstance(vardata, (float, int)):  
+    # read or compute vardata
+    try:
+        vardata = float(vardata)
+        varisnum = True
+    except:
+        varisnum = False
+     
+    if varisnum:  
         
         if vardata > 0:
             var = np.full_like(hducube[extdata].data, float(vardata))
@@ -574,12 +580,12 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     #******************************************************************************************
     #step 1: filtering the cube and the associated variance using a Gaussian kernel
     #******************************************************************************************
-    cubeF = filter_cube(cube, spatsmooth=spatsmooth, specsig=specsig, usefft=usefft)
-    varF  = filter_cube(var,  spatsmooth=spatsmooth, specsig=specsig, usefft=usefft, isvar=True)
+    cubeF = filter_cube(cube, spatsmooth=spatsmooth, specsig=specsig, usefftconv=usefftconv)
+    varF  = filter_cube(var,  spatsmooth=spatsmooth, specsig=specsig, usefftconv=usefftconv, isvar=True)
     
     hducube.close()
 
-    if not isinstance(vardata, (float, int)):  
+    if not varisnum:  
         hduvar.close()
     
     
@@ -681,7 +687,7 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
 
     if writevardata:
 
-        if isinstance(vardata, (float, int)):
+        if varisnum:
             hduout = fits.PrimaryHDU(var, header = headout)
             hduout.writeto(outdir+f'/{varfilename}.fits', overwrite=True)
         else:
@@ -722,7 +728,7 @@ def main():
     grpext.add_argument('--spatsmooth',   default= 0.,     type=float, help='Gaussian Sigma of the spatial convolution kernel applied in X and Y.')
     grpext.add_argument('--spatsmoothX',  default= None,   help='Gaussian Sigma of the spatial convolution kernel applied in X. If set, this has priority over spatsmooth.')
     grpext.add_argument('--spatsmoothY',  default= None,   help='Gaussian Sigma of the spatial convolution kernel applied in Y. If set, this has priority over spatsmooth.')
-    grpext.add_argument('--specsmooth',   default= 0.,     type=float, help='Gaussian Sigma of the spectra convolution kernel applied in Lambda. NOT IMPLEMENTED YET.')   
+    grpext.add_argument('--specsmooth',   default= 0.,     type=float, help='Gaussian Sigma of the spectra convolution kernel applied in Z/Lambda.')   
     grpext.add_argument('--usefftconv',   default= False,  type=bool, help='If True, use fft for convolution rather than the direct algorithm.')   
     grpext.add_argument('--connectivity', default= 26,     type=int, help='Voxel connectivity scheme to be used. Only 4,8 (2D) and 26, 18, and 6 (3D) are allowed.')   
     grpext.add_argument('--maskspedge',   default= None,   type=int, help='Determines how much (in pixels) to expand the mask around the edges of the cube/image.')   
@@ -758,7 +764,7 @@ def main():
     runextraction(args.data, args.vardata, \
     mask2d = args.mask2d, mask2dpost = args.mask2dpost, fmask3D = args.mask3d, extdata=args.extdata, extvardata=args.extvardata, \
     zmin = args.zmin, zmax=args.zmax, lmin=args.lmin, lmax=args.lmax, spatsmooth = spatsig, specsig=args.specsmooth, \
-    usefft=args.usefftconv, snthreshold=args.snthreshold, connectivity = args.connectivity, \
+    usefftconv=args.usefftconv, snthreshold=args.snthreshold, connectivity = args.connectivity, \
     maskspedge=args.maskspedge, mindz = args.mindz, maxdz=args.maxdz, minvox=args.minvox, minarea=args.minarea, \
     outdir=args.outdir, writelabels=args.writelabels, writesmdata=args.writesmdata, \
     writesmvar=args.writesmvar, writesmsnr=args.writesmsnr, writevardata=args.writevardata)

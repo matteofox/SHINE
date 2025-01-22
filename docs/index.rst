@@ -119,7 +119,7 @@ Run Extraction from the command line
 *Input Control Arguments:*
 
 - ``data``: Path of the input data (3D or 2D). Expected to be in extension 0, unless ``extdata`` is defined.
-- ``vardata``: Path of the variance cube. Expected to be in extension 0, unless ``extvardata`` is defined.
+- ``vardata``: Path of the variance cube. Expected to be in extension 0, unless ``extvardata`` is defined. Instead, if a positive number is provided a constant variance is assumed. If -1, compute the variance from the data with a sigma-clipping algorithm.
 - ``--mask2d``: (Optional) Path of an optional two-dimensional mask to be applied along the wave axis.
 - ``--mask2dpost``: (Optional) Path of an optional two-dimensional mask to be applied after the spatial smoothing.
 - ``--mask3d``: (Optional) Path of an optional three-dimensional mask. **(Not implemented yet)**.
@@ -136,7 +136,7 @@ Run Extraction from the command line
 - ``--spatsmooth``: Gaussian Sigma of the spatial convolution kernel applied in X and Y (default=0).
 - ``--spatsmoothX``: (Optional) Gaussian Sigma of the spatial convolution kernel applied in X. Has priority over ``spatsmooth``.
 - ``--spatsmoothY``: (Optional) Gaussian Sigma of the spatial convolution kernel applied in Y. Has priority over ``spatsmooth``.
-- ``--specsmooth``: Gaussian Sigma of the spectral convolution kernel applied in Lambda. **(Not implemented yet)**.
+- ``--specsmooth``: Gaussian Sigma of the spectral convolution kernel applied in Lambda.
 - ``--usefftconv``: If ``True``, use FFT for convolution rather than the direct algorithm.
 - ``--connectivity``: Voxel connectivity scheme to be used (default=26). Allowed values: 4, 8 (2D); 26, 18, 6 (3D).
 - ``--maskspedge``: Determines how much, in pixels (default=20), to expand the mask around the edges of the cube/image. Useful if the edges are noisier.
@@ -156,6 +156,7 @@ Run Extraction from the command line
 - ``--writesmvar``: If set, write the smoothed variance. The file is saved as ``datavarname.LABELS_out.fits``.
 - ``--writesmsnr``: If set, write the S/N smoothed cube/image. The file is saved as ``dataname.FILTERSNR_out.fits``.
 - ``--writesubcube``: If set and used, write the subcubes (cube and variance). Only valid for 3D data. The file is saved as ``dataname.SUBCUBE.fits`` or ``datavarname.SUBCUBE.fits``.
+- ``--writevardata``: If vardata is a user-provided constant value or -1 (auto-computed from sigma-clipping) write the variance.
 
 Run Extraction using Python
 ----------------------------
@@ -188,7 +189,7 @@ SHINE can be used also in a Python code. The parameters that can be used are the
    :align: left
    :alt: Catalogue output from 3D extraction.
 
-   Catalogue output from 3D extraction.
+   Catalogue output from 3D extraction (Example).
 
 **Basic Usage for 2D data:**
 
@@ -213,7 +214,7 @@ SHINE can be used also in a Python code. The parameters that can be used are the
    :align: left
    :alt: Catalogue output from 2D extraction.
 
-   Catalogue output from 2D extraction.
+   Catalogue output from 2D extraction (Example).
 
 Run Extraction using the GUI
 ----------------------------
@@ -234,8 +235,6 @@ The GUI is simple and allows the user to select input data (Cube/Image, Variance
    GUI window after ``python GUI_SHINE.py``.
 
 All implemented parameters can be adjusted according to the desired extraction, with default values provided for convenience. Data products can be selected by checking the white cells in the *Output Control Arguments* section. By default, the cube containing the IDs of the identified objects and the catalog are selected.
-
-.. warning:: Spectral smoothing is not implemented yet.
 
 Once the parameters are set, the user must click on ``Run Script`` to start the extraction. The process takes approximately few minutes for cubes and few seconds for images (faster with FFT convolution), after which the output summary is displayed in a new window. The user can then close the GUI and begin analyzing the data products.
 
@@ -279,6 +278,9 @@ Run generation of images by command line
 
 **Command line arguments for Make_IM_Shine:**
 
+*General Arguments:*
+
+- ``-h, --help``: Show this help message and exit.
 
 *Input Control Arguments:*
 
