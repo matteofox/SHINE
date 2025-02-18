@@ -169,6 +169,7 @@ def Make_Im_SHINE(cube, labelsCube=None, Id=[-1], extcub=0, extlabels=0, itype='
         #Paste the header and save
         hduout_img.header = headout
         hduout_img.writeto(outdir+f'{filename}.IMAGE{addname}.fits', overwrite=True)
+        print('Image saved to '+outdir+f'{filename}.IMAGE{addname}.fits')
             
     return image
 
