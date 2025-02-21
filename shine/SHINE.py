@@ -730,6 +730,7 @@ def main():
     grpext.add_argument('--spatsmoothY',  default= None,   help='Gaussian Sigma of the spatial convolution kernel applied in Y. If set, this has priority over spatsmooth.')
     grpext.add_argument('--specsmooth',   default= 0.,     type=float, help='Gaussian Sigma of the spectra convolution kernel applied in Z/Lambda.')   
     grpext.add_argument('--usefftconv',   default= False,  type=bool, help='If True, use fft for convolution rather than the direct algorithm.')   
+    grpext.add_argument('--dovarsmooth',  default= True,   type=bool, help='If False, do not apply the smoothing on the vardata.')
     grpext.add_argument('--connectivity', default= 26,     type=int, help='Voxel connectivity scheme to be used. Only 4,8 (2D) and 26, 18, and 6 (3D) are allowed.')   
     grpext.add_argument('--maskspedge',   default= None,   type=int, help='Determines how much (in pixels) to expand the mask around the edges of the cube/image.')   
    
@@ -764,7 +765,7 @@ def main():
     runextraction(args.data, args.vardata, \
     mask2d = args.mask2d, mask2dpost = args.mask2dpost, fmask3D = args.mask3d, extdata=args.extdata, extvardata=args.extvardata, \
     zmin = args.zmin, zmax=args.zmax, lmin=args.lmin, lmax=args.lmax, spatsmooth = spatsig, specsig=args.specsmooth, \
-    usefftconv=args.usefftconv, snthreshold=args.snthreshold, connectivity = args.connectivity, \
+    usefftconv=args.usefftconv, dovarsmooth=args.dovarsmooth, snthreshold=args.snthreshold, connectivity = args.connectivity, \
     maskspedge=args.maskspedge, mindz = args.mindz, maxdz=args.maxdz, minvox=args.minvox, minarea=args.minarea, \
     outdir=args.outdir, writelabels=args.writelabels, writesmdata=args.writesmdata, \
     writesmvar=args.writesmvar, writesmsnr=args.writesmsnr, writevardata=args.writevardata)

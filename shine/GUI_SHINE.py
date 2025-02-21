@@ -67,7 +67,9 @@ class GUI_SHINE:
         self.entry_connectivity = self.create_input_row(self.frame_extraction, "Connectivity (Default=26):", 5, "26")
         self.entry_maskspatedge = self.create_input_row(self.frame_extraction, "Mask Spatial Edges (Default=20):", 6, "20")
         self.usefftconv         = tk.BooleanVar()
+        self.dovarsmooth        = tk.BooleanVar(value=1)
         tk.Checkbutton(self.frame_extraction, text="Use FFT", variable=self.usefftconv).grid(row=7, column=1, sticky="w")
+        tk.Checkbutton(self.frame_extraction, text="Smooth Vardata", variable=self.dovarsmooth).grid(row=7, column=2, sticky="w")
 
         # === Cleaning Arguments Section (grpcln) ===
         self.frame_cleaning = tk.LabelFrame(root, text="Cleaning Arguments", padx=10, pady=10)
@@ -238,6 +240,7 @@ class GUI_SHINE:
         connectivity = self.entry_connectivity.get()
         maskspatedge = self.entry_maskspatedge.get()
         usefftconv   = self.usefftconv.get()
+        dovarsmooth  = self.dovarsmooth.get()
 
         # Collect cleaning arguments
         minvox  = self.entry_minvox.get()
@@ -277,6 +280,8 @@ class GUI_SHINE:
             command.append(f"--specsmooth={specsmooth}")
         if usefftconv:
             command.append(f"--usefftconv={usefftconv}")
+        if dovarsmooth:
+            command.append(f"--dovarsmooth={dovarsmooth}")
 
         if zmin and zmax == "None":
             zmin = None

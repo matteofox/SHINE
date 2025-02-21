@@ -138,6 +138,7 @@ Run Extraction from the command line
 - ``--spatsmoothY``: (Optional) Gaussian Sigma of the spatial convolution kernel applied in Y. Has priority over ``spatsmooth``.
 - ``--specsmooth``: Gaussian Sigma of the spectral convolution kernel applied in Lambda.
 - ``--usefftconv``: If ``True``, use FFT for convolution rather than the direct algorithm.
+- ``--dovarsmooth``: If False, do not apply the smoothing on the vardata.
 - ``--connectivity``: Voxel connectivity scheme to be used (default=26). Allowed values: 4, 8 (2D); 26, 18, 6 (3D).
 - ``--maskspedge``: Determines how much, in pixels (default=20), to expand the mask around the edges of the cube/image. Useful if the edges are noisier.
 
