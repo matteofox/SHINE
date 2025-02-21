@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='SHINE',  # Replace with your project name
-    version='1.0',             # Initial version
+    version='1.1',             # Initial version
     packages=find_packages(),  # Automatically finds all the sub-packages in the project
     install_requires=[         # List of dependencies
         'numpy',  # Example dependency
