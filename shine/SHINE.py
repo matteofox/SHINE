@@ -317,11 +317,13 @@ def generate_catalogue(labels, naxis=3):
     IDs   = np.unique(labels)
     Nobj  = len(IDs)
     Nvox  = stats['voxel_counts']
-    Xcent = stats['centroids'][:,-1]
-    Ycent = stats['centroids'][:,-2]
+    
+    #Offset here is due to reference position for counting, the first pixel position should be 0.5 (center of first pixel)
+    Xcent = stats['centroids'][:,-1]+0.5 
+    Ycent = stats['centroids'][:,-2]+0.5
     #Evaluate Zcent only if 3D data
     if naxis==3:
-       Zcent = stats['centroids'][:,-3]
+       Zcent = stats['centroids'][:,-3]+0.5
     
     Xmin = []
     Xmax = []
