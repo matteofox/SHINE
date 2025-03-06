@@ -732,7 +732,7 @@ def main():
     grpext.add_argument('--usefftconv',   default= False,  type=bool, help='If True, use fft for convolution rather than the direct algorithm.')   
     grpext.add_argument('--dovarsmooth',  default= True,   type=bool, help='If False, do not apply the smoothing on the vardata.')
     grpext.add_argument('--connectivity', default= 26,     type=int, help='Voxel connectivity scheme to be used. Only 4,8 (2D) and 26, 18, and 6 (3D) are allowed.')   
-    grpext.add_argument('--maskspedge',   default= None,   type=int, help='Determines how much (in pixels) to expand the mask around the edges of the cube/image.')   
+    grpext.add_argument('--maskspedge',   default= 0,   type=int, help='Determines how much (in pixels) to expand the mask around the edges of the cube/image.')   
    
     grpcln = parser.add_argument_group('Cleaning arguments')
     
