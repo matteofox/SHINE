@@ -500,26 +500,31 @@ def clean_clube(data, filtsize=7, rebinfac=40):
     
     nz, ny, nx = np.shape(data)
     
-    zrebin = np.ceil(nz/rebinfac)
+    zrebin = int(np.ceil(nz/rebinfac))
     
     contcube = np.zeros((zrebin, ny, nx))
-    
+
+    print(f'... Rebinning the cube')
     for ii in np.arange(zrebin):
         
         zmin = rebinfac*ii
-        zmax = np.min(nz, rebinfac*(ii+1))
+        zmax = min(nz, rebinfac*(ii+1))
         mean, median, std = sigma_clipped_stats(data[zmin:zmax,:,:], sigma = 3)   
         contcube[ii] = median
-    
-   filtcube = median_filter(contcube, size=filtsize, axis=0)
-   
-   for ii in np.arange(zrebin):    
+
+    print(f'... Filtering the rebinned cube')
+    filtcube = median_filter(contcube, size=filtsize, axes=0)
+
+    print(f'... Subtract the filtered cube')
+    for ii in np.arange(zrebin):    
        
         zmin = rebinfac*ii
-        zmax = np.min(nz, rebinfac*(ii+1))
+        zmax = min(nz, rebinfac*(ii+1))
         data[zmin:zmax,:,:] -= filtcube[ii]
-   
-   return data     
+    
+    return data     
+
+
 
 def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, extdata=0, extvardata=0, \
                   snthreshold=2, maskspedge=0, spatsmooth=2, specsig=0, usefftconv=False, dovarsmooth=True, \
