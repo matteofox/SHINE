@@ -499,6 +499,8 @@ def compute_var(data):
 def clean_clube(data, filtsize=7, rebinfac=40):
     
     nz, ny, nx = np.shape(data)
+
+    data = np.ma.array(data, mask=np.isnan(data))
     
     zrebin = int(np.ceil(nz/rebinfac))
     
@@ -506,10 +508,10 @@ def clean_clube(data, filtsize=7, rebinfac=40):
 
     print(f'... Rebinning the cube')
     for ii in np.arange(zrebin):
-        
+        print(f'Slice: {ii}')
         zmin = rebinfac*ii
         zmax = min(nz, rebinfac*(ii+1))
-        mean, median, std = sigma_clipped_stats(data[zmin:zmax,:,:], sigma = 3)   
+        mean, median, std = sigma_clipped_stats(data[zmin:zmax,:,:], sigma = 3, axis=0, maxiters=3)   
         contcube[ii] = median
 
     print(f'... Filtering the rebinned cube')
