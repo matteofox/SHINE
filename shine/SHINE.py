@@ -15,7 +15,7 @@ from astropy.convolution import Gaussian1DKernel, Gaussian2DKernel, CustomKernel
 from astropy.table import Table, Column
 from astropy.utils.exceptions import AstropyWarning
 
-from scipy.ndimage import maximum_filter
+from scipy.ndimage import maximum_filter, median_filter
 from astropy.convolution import convolve, convolve_fft
 from astropy.stats import sigma_clipped_stats
 
@@ -493,7 +493,33 @@ def compute_var(data):
     vardata = (np.full_like(data, std))**2
 
     return vardata
-
+    
+    
+ 
+def clean_clube(data, filtsize=7, rebinfac=40):
+    
+    nz, ny, nx = np.shape(data)
+    
+    zrebin = np.ceil(nz/rebinfac)
+    
+    contcube = np.zeros((zrebin, ny, nx))
+    
+    for ii in np.arange(zrebin):
+        
+        zmin = rebinfac*ii
+        zmax = np.min(nz, rebinfac*(ii+1))
+        mean, median, std = sigma_clipped_stats(data[zmin:zmax,:,:], sigma = 3)   
+        contcube[ii] = median
+    
+   filtcube = median_filter(contcube, size=filtsize, axis=0)
+   
+   for ii in np.arange(zrebin):    
+       
+        zmin = rebinfac*ii
+        zmax = np.min(nz, rebinfac*(ii+1))
+        data[zmin:zmax,:,:] -= filtcube[ii]
+   
+   return data     
 
 def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, extdata=0, extvardata=0, \
                   snthreshold=2, maskspedge=0, spatsmooth=2, specsig=0, usefftconv=False, dovarsmooth=True, \
@@ -720,7 +746,6 @@ def main():
     grpinp.add_argument('--zmax',          default= None, type=int, help='If selecting the cube and the variance: final pixel in z direction (from 0). Only valid for 3D data.')
     grpinp.add_argument('--lmin',          default= None, type=float, help='If selecting the cube and the variance: initial wavelength in z direction (in Angstrom). Only valid for 3D data.')
     grpinp.add_argument('--lmax',          default= None, type=float, help='If selecting the cube and the variance: final wavelength in z direction (in Angstrom). Only valid for 3D data.')
-    
     
     grpext = parser.add_argument_group('Extraction arguments')
     
