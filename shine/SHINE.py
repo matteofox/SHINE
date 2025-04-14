@@ -425,13 +425,11 @@ def add_wcs_struct(catalogue, datahead):
     wcs = WCS(datahead)
     naxis = datahead['NAXIS']
     
-    skycoords = utils.pixel_to_skycoord(catalogue['Xcent'], catalogue['Ycent'], wcs=wcs)
+    skycoords_geom = utils.pixel_to_skycoord(catalogue['Xcent'], catalogue['Ycent'], wcs=wcs)
+    skycoords_flxw = utils.pixel_to_skycoord(catalogue['XcentFL'], catalogue['YcentFL'], wcs=wcs)
 
-    RA  = np.round(skycoords.ra.degree,6)  #in deg
-    Dec = np.round(skycoords.dec.degree,6) #in deg 
-    
-    RA_column  = Column(data=RA, name='RA_deg')
-    Dec_column = Column(data=Dec, name='DEC_deg')
+    RA_column  = Column(data=np.round(skycoords_geom.ra.degree,6), name='RA_deg')   #in deg
+    Dec_column = Column(data=np.round(skycoords_geom.dec.degree,6), name='DEC_deg') #in deg 
 
     catalogue.add_column(RA_column)
     catalogue.add_column(Dec_column)
@@ -444,11 +442,22 @@ def add_wcs_struct(catalogue, datahead):
         dlam = datahead['CDELT3'] 
      finally:
         wave = datahead['CRVAL3']+ np.arange(datahead['NAXIS3'])*dlam
-        Lambda = np.interp(catalogue['Zcent'], np.arange(len(wave)), wave)
-        Lambda_column = Column(data=Lambda, name='Lambda') 
+        
+        Lambda_column = Column(data=np.interp(catalogue['Zcent'], np.arange(len(wave)), wave), name='Lambda') 
         catalogue.add_column(Lambda_column)   
+  
+    #Now move to flux weighted quantities
+    RAFL_column  = Column(data=np.round(skycoords_flxw.ra.degree,6), name='RAFL_deg')   #in deg
+    DecFL_column = Column(data=np.round(skycoords_flxw.dec.degree,6), name='DECFL_deg') #in deg 
 
-    
+    catalogue.add_column(RAFL_column)
+    catalogue.add_column(DecFL_column)
+
+    if naxis==3:
+        
+        LambdaFL_column = Column(data=np.interp(catalogue['ZcentFL'], np.arange(len(wave)), wave), name='LambdaFL') 
+        catalogue.add_column(LambdaFL_column)   
+     
     return catalogue
 
 
@@ -686,18 +695,18 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     #*********************************************************************************************
     catalogue, labels_cln = cleaning(catalogue, labels_out, mindz=mindz, maxdz=maxdz, minvox=minvox, \
                                          minarea=minarea)
-
+   
     
     #*********************************************************************************************
-    #Step 7: add WCS in catalogue
-    #*********************************************************************************************
-    catalogue = add_wcs_struct(catalogue, newhduhead)
-    
-    
-    #*********************************************************************************************
-    #Step 8: perform photometry
+    #Step 7: perform photometry
     #*********************************************************************************************
     catalogue = compute_photometry(catalogue, cubeF, varF, labels_cln)
+    
+    
+    #*********************************************************************************************
+    #Step 8: add WCS in catalogue
+    #*********************************************************************************************
+    catalogue = add_wcs_struct(catalogue, newhduhead)
     
     
     #*********************************************************************************************
