@@ -453,11 +453,19 @@ def add_wcs_struct(catalogue, datahead):
 
 
 def compute_photometry(catalogue, cube, var, labelsCube):
+
+    #As of April 2025, also compute flux weighted centroids in this function,
+    #as for geometrical centroids, the first pixel position should be 0.5 (center of first pixel)
+    
+    naxis = len(np.shape(cube))
     
     flux     = np.zeros_like(catalogue['ID'], dtype=float)
     flux_err = np.zeros_like(catalogue['ID'], dtype=float)
     
-    naxis = len(np.shape(cube))
+    flwxcent = np.array(catalogue['Xmin'], dtype=float)+0.5
+    flwycent = np.array(catalogue['Ymin'], dtype=float)+0.5
+    if naxis==3:
+       flwzcent = np.array(catalogue['Zmin'], dtype=float)+0.5
     
     for ind, tid in enumerate(catalogue['ID']): 
         
@@ -465,23 +473,46 @@ def compute_photometry(catalogue, cube, var, labelsCube):
           pstamplabel = labelsCube[catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
           pstampcube  =       cube[catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
           pstampvar   =        var[catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
+          
+          okind = (pstamplabel==tid)
+          valid_y, valid_x = np.nonzero(okind)
+          
+          
         elif naxis==3:
           pstamplabel = labelsCube[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
           pstampcube  =       cube[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
           pstampvar   =        var[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
-        
+
+          okind = (pstamplabel==tid)
+          valid_z, valid_y, valid_x = np.nonzero(okind)
+         
         okind = (pstamplabel==tid)
         
         flux[ind] = np.nansum(pstampcube[okind])
         flux_err[ind] = np.sqrt(np.nansum(pstampvar[okind]))
+        
+        flwxcent[ind] += np.nansum(valid_x * pstampcube[okind])/flux[ind]
+        flwycent[ind] += np.nansum(valid_y * pstampcube[okind])/flux[ind]
+        if naxis==3:
+           flwzcent[ind] += np.nansum(valid_z * pstampcube[okind])/flux[ind]
                 
     Flux_column  = Column(data=flux, name='Flux')
     Flerr_column = Column(data=flux_err, name='Flux_err')
     SNR_column   = Column(data=flux/flux_err, name='Flux_SNR')
-                
+            
     catalogue.add_column(Flux_column)
     catalogue.add_column(Flerr_column)
     catalogue.add_column(SNR_column)
+    
+    XcentFL_column  = Column(data=flwxcent, name='XcentFL')
+    YcentFL_column  = Column(data=flwycent, name='YcentFL')
+    
+    catalogue.add_column(XcentFL_column)
+    catalogue.add_column(YcentFL_column)
+ 
+    if naxis==3:
+       ZcentFL_column  = Column(data=flwzcent, name='ZcentFL')
+       catalogue.add_column(ZcentFL_column)
     
     return catalogue     
 
