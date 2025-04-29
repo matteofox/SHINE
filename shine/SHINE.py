@@ -425,13 +425,11 @@ def add_wcs_struct(catalogue, datahead):
     wcs = WCS(datahead)
     naxis = datahead['NAXIS']
     
-    skycoords = utils.pixel_to_skycoord(catalogue['Xcent'], catalogue['Ycent'], wcs=wcs)
+    skycoords_geom = utils.pixel_to_skycoord(catalogue['Xcent'], catalogue['Ycent'], wcs=wcs)
+    skycoords_flxw = utils.pixel_to_skycoord(catalogue['XcentFL'], catalogue['YcentFL'], wcs=wcs)
 
-    RA  = np.round(skycoords.ra.degree,6)  #in deg
-    Dec = np.round(skycoords.dec.degree,6) #in deg 
-    
-    RA_column  = Column(data=RA, name='RA_deg')
-    Dec_column = Column(data=Dec, name='DEC_deg')
+    RA_column  = Column(data=np.round(skycoords_geom.ra.degree,6), name='RA_deg')   #in deg
+    Dec_column = Column(data=np.round(skycoords_geom.dec.degree,6), name='DEC_deg') #in deg 
 
     catalogue.add_column(RA_column)
     catalogue.add_column(Dec_column)
@@ -444,20 +442,39 @@ def add_wcs_struct(catalogue, datahead):
         dlam = datahead['CDELT3'] 
      finally:
         wave = datahead['CRVAL3']+ np.arange(datahead['NAXIS3'])*dlam
-        Lambda = np.interp(catalogue['Zcent'], np.arange(len(wave)), wave)
-        Lambda_column = Column(data=Lambda, name='Lambda') 
+        
+        Lambda_column = Column(data=np.interp(catalogue['Zcent'], np.arange(len(wave)), wave), name='Lambda') 
         catalogue.add_column(Lambda_column)   
+  
+    #Now move to flux weighted quantities
+    RAFL_column  = Column(data=np.round(skycoords_flxw.ra.degree,6), name='RAFL_deg')   #in deg
+    DecFL_column = Column(data=np.round(skycoords_flxw.dec.degree,6), name='DECFL_deg') #in deg 
 
-    
+    catalogue.add_column(RAFL_column)
+    catalogue.add_column(DecFL_column)
+
+    if naxis==3:
+        
+        LambdaFL_column = Column(data=np.interp(catalogue['ZcentFL'], np.arange(len(wave)), wave), name='LambdaFL') 
+        catalogue.add_column(LambdaFL_column)   
+     
     return catalogue
 
 
 def compute_photometry(catalogue, cube, var, labelsCube):
+
+    #As of April 2025, also compute flux weighted centroids in this function,
+    #as for geometrical centroids, the first pixel position should be 0.5 (center of first pixel)
+    
+    naxis = len(np.shape(cube))
     
     flux     = np.zeros_like(catalogue['ID'], dtype=float)
     flux_err = np.zeros_like(catalogue['ID'], dtype=float)
     
-    naxis = len(np.shape(cube))
+    flwxcent = np.array(catalogue['Xmin'], dtype=float)+0.5
+    flwycent = np.array(catalogue['Ymin'], dtype=float)+0.5
+    if naxis==3:
+       flwzcent = np.array(catalogue['Zmin'], dtype=float)+0.5
     
     for ind, tid in enumerate(catalogue['ID']): 
         
@@ -465,23 +482,46 @@ def compute_photometry(catalogue, cube, var, labelsCube):
           pstamplabel = labelsCube[catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
           pstampcube  =       cube[catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
           pstampvar   =        var[catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
+          
+          okind = (pstamplabel==tid)
+          valid_y, valid_x = np.nonzero(okind)
+          
+          
         elif naxis==3:
           pstamplabel = labelsCube[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
           pstampcube  =       cube[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
           pstampvar   =        var[catalogue['Zmin'][ind]:catalogue['Zmax'][ind],catalogue['Ymin'][ind]:catalogue['Ymax'][ind],catalogue['Xmin'][ind]:catalogue['Xmax'][ind]]
-        
+
+          okind = (pstamplabel==tid)
+          valid_z, valid_y, valid_x = np.nonzero(okind)
+         
         okind = (pstamplabel==tid)
         
         flux[ind] = np.nansum(pstampcube[okind])
         flux_err[ind] = np.sqrt(np.nansum(pstampvar[okind]))
+        
+        flwxcent[ind] += np.nansum(valid_x * pstampcube[okind])/flux[ind]
+        flwycent[ind] += np.nansum(valid_y * pstampcube[okind])/flux[ind]
+        if naxis==3:
+           flwzcent[ind] += np.nansum(valid_z * pstampcube[okind])/flux[ind]
                 
     Flux_column  = Column(data=flux, name='Flux')
     Flerr_column = Column(data=flux_err, name='Flux_err')
     SNR_column   = Column(data=flux/flux_err, name='Flux_SNR')
-                
+            
     catalogue.add_column(Flux_column)
     catalogue.add_column(Flerr_column)
     catalogue.add_column(SNR_column)
+    
+    XcentFL_column  = Column(data=flwxcent, name='XcentFL')
+    YcentFL_column  = Column(data=flwycent, name='YcentFL')
+    
+    catalogue.add_column(XcentFL_column)
+    catalogue.add_column(YcentFL_column)
+ 
+    if naxis==3:
+       ZcentFL_column  = Column(data=flwzcent, name='ZcentFL')
+       catalogue.add_column(ZcentFL_column)
     
     return catalogue     
 
@@ -655,18 +695,18 @@ def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, ext
     #*********************************************************************************************
     catalogue, labels_cln = cleaning(catalogue, labels_out, mindz=mindz, maxdz=maxdz, minvox=minvox, \
                                          minarea=minarea)
-
+   
     
     #*********************************************************************************************
-    #Step 7: add WCS in catalogue
-    #*********************************************************************************************
-    catalogue = add_wcs_struct(catalogue, newhduhead)
-    
-    
-    #*********************************************************************************************
-    #Step 8: perform photometry
+    #Step 7: perform photometry
     #*********************************************************************************************
     catalogue = compute_photometry(catalogue, cubeF, varF, labels_cln)
+    
+    
+    #*********************************************************************************************
+    #Step 8: add WCS in catalogue
+    #*********************************************************************************************
+    catalogue = add_wcs_struct(catalogue, newhduhead)
     
     
     #*********************************************************************************************
