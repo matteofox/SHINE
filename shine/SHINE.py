@@ -140,7 +140,7 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
        return SMcube
 
 
-def Gaussian3D(xmean, ymean, zmean, xstd. ystd, zstd):
+def Gaussian3D(xstd, ystd, zstd, xmean=0, ymean=0, zmean=0):
 
     amplitude = 1/( (2*np.pi)**(3/2)*xstd*ystd*zstd)
     
@@ -150,7 +150,10 @@ def Gaussian3D(xmean, ymean, zmean, xstd. ystd, zstd):
     return gaussian
 
 
-def Gaussian3DKernel(xsize, ysize, zsize)
+def Gaussian3DKernel(xstd, ystd, zstd, xsize, ysize, zsize)
+
+    g = Gaussian3D(xstd, ystd, zstd)
+    
     x = np.arange(- (xsize // 2), (xsize // 2)+1) 
     y = np.arange(- (ysize // 2), (ysize // 2)+1) 
     z = np.arange(- (zsize // 2), (zsize // 2)+1) 
