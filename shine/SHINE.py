@@ -15,7 +15,7 @@ from astropy.convolution import Gaussian1DKernel, Gaussian2DKernel, CustomKernel
 from astropy.table import Table, Column
 from astropy.utils.exceptions import AstropyWarning
 
-from scipy.ndimage import maximum_filter, median_filter
+from scipy.ndimage import maximum_filter, median_filter, variance, mean
 from astropy.convolution import convolve, convolve_fft
 from astropy.stats import sigma_clipped_stats
 
@@ -66,55 +66,104 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
        cubsize = np.shape(cube)
 
     if ysig > 0. and xsig > 0.:
-        spatkern = Gaussian2DKernel(xsig, ysig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1))
 
-        if isvar:
-            # Variance requires a special treatment because the kernel cannot be normalized to unity
-            label = 'variance'
-            nan_treatment = 'fill'
-            normalize = False
+        if specsig == 0:
+            spatkern = Gaussian2DKernel(xsig, ysig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1))
 
-            # Make a custom Kernel
-            spatkern = CustomKernel((spatkern.array) ** 2)
-
-            # Interpolate NaNs with ad-hoc kernel
-            print('... Interpolating NaNs in Variance Data')
-            tmpkern = Gaussian2DKernel(xsig, ysig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1))
+            if isvar:
+                # Variance requires a special treatment because the kernel cannot be normalized to unity
+                label = 'variance'
+                nan_treatment = 'fill'
+                normalize = False
+    
+                # Make a custom Kernel
+                spatkern = CustomKernel((spatkern.array) ** 2)
+    
+                # Interpolate NaNs with ad-hoc kernel
+                print('... Interpolating NaNs in Variance Data')
+                tmpkern = Gaussian2DKernel(xsig, ysig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1))
+                for i in np.arange(cubsize[0]):
+                    cube[i, ...] = interpolate_replace_nans(cube[i, ...], tmpkern)
+            else:
+                label = 'data'
+                normalize = True
+                nan_treatment = 'interpolate'
+    
+            print('... Filtering the {} using XY-axis gaussian kernel of size {} pix'.format(label, spatsmooth))
+    
             for i in np.arange(cubsize[0]):
-                cube[i, ...] = interpolate_replace_nans(cube[i, ...], tmpkern)
-        else:
-            label = 'data'
-            normalize = True
-            nan_treatment = 'interpolate'
-
-        print('... Filtering the {} using XY-axis gaussian kernel of size {} pix'.format(label, spatsmooth))
-
-        for i in np.arange(cubsize[0]):
-            if usefftconv:
-                SMcube[i, ...] = convolve_fft(cube[i, ...], spatkern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
-            else:
-                SMcube[i, ...] = convolve(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
+                if usefftconv:
+                    SMcube[i, ...] = convolve_fft(cube[i, ...], spatkern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
+                else:
+                    SMcube[i, ...] = convolve(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
+                    
+        elif specsig > 0. and naxis==3:
             
-    if specsig > 0. and naxis==3:
-        print('... Filtering the cube using Z-axis gaussian kernel of size {}'.format(specsig))
-        speckern = Gaussian1DKernel(specsig)
-        for i in np.arange(cubsize[1]):
-          for j in np.arange(cubsize[2]):
-            if usefftconv:
-                SMcube[:,i,j] = convolve_fft(SMcube[:,i,j], speckern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
+            spatspeckern = Gaussian3DKernel(xsize=int(6 * xsig + 1), ysize=int(6 * ysig + 1), zsize=int(6 * specsig + 1) )
+    
+            if isvar:
+                # Variance requires a special treatment because the kernel cannot be normalized to unity
+                label = 'variance'
+                nan_treatment = 'fill'
+                normalize = False
+    
+                # Make a custom Kernel
+                spatspeckern = CustomKernel((spatspeckern.array) ** 2)
+    
+                # Interpolate NaNs with ad-hoc kernel
+                print('... Interpolating NaNs in Variance Data')
+                tmpkern = Gaussian3DKernel(xsig, ysig, specsig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1), zsize=int(6 * specsig + 1))
+                cube = interpolate_replace_nans(cube, tmpkern)
+                
             else:
-                SMcube[:,i,j] = convolve(SMcube[:,i,j], speckern, normalize_kernel=normalize, nan_treatment=nan_treatment)
+                label = 'data'
+                normalize = True
+                nan_treatment = 'interpolate'
+    
+            print('... Filtering the {} using XYZ-axis gaussian kernel of XY size {} {} and Z size {} pix'.format(label, xsig, ysig, specsig))
+    
+            if usefftconv:
+                SMcube = convolve_fft(SMcube, spatspeckern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
+            else:
+                SMcube = convolve(SMcube, spatspeckern, normalize_kernel=normalize, nan_treatment=nan_treatment)
            
 
-    elif specsig > 0. and naxis<3:   
-        print('... Z-axis filtering requested on non-3D data. No spectral filtering will occurr.')
-        
+        else:   
+            raise ValueError('... Z-axis filtering requested on non-3D data.')
+
+    else:
+        raise ValueError('... Invalid xsig and ysig. They must be > 0')
+            
     if naxis==2:
        return SMcube[0,...]
     else:   
        return SMcube
 
 
+def Gaussian3D(xmean, ymean, zmean, xstd. ystd, zstd):
+
+    amplitude = 1/( (2*np.pi)**(3/2)*xstd*ystd*zstd)
+    
+    def gaussian(x,y,z):
+        f = amplitude*np.exp( -((x-xmean)**2/(2*xstd**2) + (y-ymean)**2/(2*ystd**2) + (z-zmean)**2/(2*zstd**2)))
+        return f
+    return gaussian
+
+
+def Gaussian3DKernel(xsize, ysize, zsize)
+    x = np.arange(- (xsize // 2), (xsize // 2)+1) 
+    y = np.arange(- (ysize // 2), (ysize // 2)+1) 
+    z = np.arange(- (zsize // 2), (zsize // 2)+1) 
+    
+    xx, yy, zz = np.meshgrid(x, y, z)
+    kernel_array = g(xx, yy, zz)
+    
+    kernel_array /= np.sum(kernel_array)
+
+    return kernel_array
+
+
+    
 def find_nan_edges(cube, extend=None):
     # If there are values identically zero, set them to NaN
     cube[cube == 0] = np.nan
@@ -459,6 +508,7 @@ def add_wcs_struct(catalogue, datahead):
         catalogue.add_column(LambdaFL_column)   
      
     return catalogue
+
 
 
 def compute_photometry(catalogue, cube, var, labelsCube):
