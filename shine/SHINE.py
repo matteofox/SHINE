@@ -99,7 +99,7 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
                     
         elif specsig > 0. and naxis==3:
             
-            spatspeckern = Gaussian3DKernel(xsize=int(6 * xsig + 1), ysize=int(6 * ysig + 1), zsize=int(6 * specsig + 1) )
+            spatspeckern = Gaussian3DKernel(xsig, ysig, specsig, xsize=int(6 * xsig + 1), ysize=int(6 * ysig + 1), zsize=int(6 * specsig + 1) )
     
             if isvar:
                 # Variance requires a special treatment because the kernel cannot be normalized to unity
