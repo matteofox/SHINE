@@ -115,11 +115,11 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
                 normalize = False
     
                 # Make a custom Kernel
-                spatspeckern = CustomKernel((spatspeckern.array) ** 2)
+                spatspeckern = CustomKernel((spatspeckern) ** 2)
     
                 # Interpolate NaNs with ad-hoc kernel
                 print('... Interpolating NaNs in Variance Data')
-                tmpkern = Gaussian3DKernel(xsig, ysig, specsig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1), zsize=int(6 * specsig + 1))
+                tmpkern = Gaussian3DKernel(xsig, ysig, specsig, xsize=int(6 * xsig + 1), ysize=int(6 * ysig + 1), zsize=int(6 * specsig + 1))
                 cube = interpolate_replace_nans(cube, tmpkern)
                 
             else:
