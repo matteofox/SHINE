@@ -37,7 +37,7 @@ except:
 class SHINEWarning(UserWarning):
       pass
     
-#Author MF
+#Author MF+DT
 def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
     
     try:
@@ -68,6 +68,10 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
     if ysig > 0. and xsig > 0.:
 
         if specsig == 0:
+
+            # ----------------------------------------------------------------
+            # this is the spatial 2D smoothing case (valid for 2D and 3D data)
+            # ----------------------------------------------------------------
             spatkern = Gaussian2DKernel(xsig, ysig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1))
 
             if isvar:
@@ -98,7 +102,10 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
                     SMcube[i, ...] = convolve(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
                     
         elif specsig > 0. and naxis==3:
-            
+
+            # -----------------------------------------------------------------------
+            # this is the spatial+spectral 3D smoothing case (valid only for 3D data)
+            # -----------------------------------------------------------------------
             spatspeckern = Gaussian3DKernel(xsig, ysig, specsig, xsize=int(6 * xsig + 1), ysize=int(6 * ysig + 1), zsize=int(6 * specsig + 1) )
     
             if isvar:
@@ -127,7 +134,6 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
             else:
                 SMcube = convolve(SMcube, spatspeckern, normalize_kernel=normalize, nan_treatment=nan_treatment)
            
-
         else:   
             raise ValueError('... Z-axis filtering requested on non-3D data.')
 
@@ -150,7 +156,7 @@ def Gaussian3D(xstd, ystd, zstd, xmean=0, ymean=0, zmean=0):
     return gaussian
 
 
-def Gaussian3DKernel(xstd, ystd, zstd, xsize, ysize, zsize)
+def Gaussian3DKernel(xstd, ystd, zstd, xsize, ysize, zsize):
 
     g = Gaussian3D(xstd, ystd, zstd)
     
