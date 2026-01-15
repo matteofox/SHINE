@@ -93,7 +93,7 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
                 normalize = True
                 nan_treatment = 'interpolate'
     
-            print('... Filtering the {} using XY-axis gaussian kernel of size {} pix'.format(label, spatsmooth))
+            print('... Filtering the {} using XY-axis gaussian kernel of size xsig={}, ysig={} pix'.format(label, xsig, ysig))
     
             for i in np.arange(cubsize[0]):
                 if usefftconv:
@@ -127,18 +127,22 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
                 normalize = True
                 nan_treatment = 'interpolate'
     
-            print('... Filtering the {} using XYZ-axis gaussian kernel of XY size {} {} and Z size {} pix'.format(label, xsig, ysig, specsig))
+            print('... Filtering the {} using XYZ-axis gaussian kernel of size xsig={}, ysig={} and zsig={} pix'.format(label, xsig, ysig, specsig))
     
             if usefftconv:
                 SMcube = convolve_fft(SMcube, spatspeckern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
             else:
                 SMcube = convolve(SMcube, spatspeckern, normalize_kernel=normalize, nan_treatment=nan_treatment)
-           
         else:   
             raise ValueError('... Z-axis filtering requested on non-3D data.')
 
+    elif ysig == 0. and xsig == 0.:
+        if naxis==2:
+           return SMcube[0,...]
+        else:   
+           return SMcube
     else:
-        raise ValueError('... Invalid xsig and ysig. They must be > 0')
+        raise ValueError('... Invalid xsig and ysig. They must be >= 0')
             
     if naxis==2:
        return SMcube[0,...]
@@ -164,7 +168,7 @@ def Gaussian3DKernel(xstd, ystd, zstd, xsize, ysize, zsize):
     y = np.arange(- (ysize // 2), (ysize // 2)+1) 
     z = np.arange(- (zsize // 2), (zsize // 2)+1) 
     
-    xx, yy, zz = np.meshgrid(x, y, z)
+    zz, yy, xx = np.meshgrid(z, y, x, indexing='ij')
     kernel_array = g(xx, yy, zz)
     
     kernel_array /= np.sum(kernel_array)
