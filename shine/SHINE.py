@@ -142,7 +142,7 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
         else:   
            return SMcube
     else:
-        raise ValueError('... Invalid xsig and ysig. They must be >= 0')
+        raise ValueError('... Invalid xsig and ysig. They must be > 0')
             
     if naxis==2:
        return SMcube[0,...]
