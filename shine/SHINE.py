@@ -130,9 +130,9 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
             print('... Filtering the {} using XYZ-axis gaussian kernel of size xsig={}, ysig={} and zsig={} pix'.format(label, xsig, ysig, specsig))
     
             if usefftconv:
-                SMcube = convolve_fft(SMcube, spatspeckern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
+                SMcube = convolve_fft(cube, spatspeckern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
             else:
-                SMcube = convolve(SMcube, spatspeckern, normalize_kernel=normalize, nan_treatment=nan_treatment)
+                SMcube = convolve(cube, spatspeckern, normalize_kernel=normalize, nan_treatment=nan_treatment)
         else:   
             raise ValueError('... Z-axis filtering requested on non-3D data.')
 
@@ -596,8 +596,8 @@ def compute_var(data):
     vardata = (np.full_like(data, std))**2
 
     return vardata
-    
-    
+
+
  
 def clean_clube(data, filtsize=7, rebinfac=40):
     

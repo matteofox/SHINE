@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 
-def Make_Im_SHINE(cube, labelsCube=None, Id=[-1], extcub=0, extlabels=0, itype='mean', outdir='./', writeout=False, addname='', nsl=-2, nsladd=0):
+def Make_Im_SHINE(cube, labelsCube=None, Id=[-1], extcub=0, extlabels=0, isvar=False, itype='mean', outdir='./', writeout=False, addname='', nsl=-2, nsladd=0):
     
     
     #------------------ READ THE CUBE AND SET THE DATA ---------------------
@@ -123,8 +123,12 @@ def Make_Im_SHINE(cube, labelsCube=None, Id=[-1], extcub=0, extlabels=0, itype='
         
     #-------------- PRODUCE THE IMAGE GIVEN THE METHOD ---------------------
     if itype == 'flux':
-        image = np.nansum(cube, axis=0)
-        image    = (image*deltal/pixsize**2)*0.01 #to have units in 10^-18 erg s^-1 cm^-2 arcsec^-1
+        image    = np.nansum(cube, axis=0)
+        sbfactor = (deltal/pixsize**2)*0.01 #to have units in 10^-18 erg s^-1 cm^-2 arcsec^-1
+        if not isvar:
+            image    = image*sbfactor    
+        else:
+            image    = image*sbfactor**2
      
     elif itype =='mean':
         image = np.nanmean(cube, axis=0)
@@ -136,7 +140,7 @@ def Make_Im_SHINE(cube, labelsCube=None, Id=[-1], extcub=0, extlabels=0, itype='
         print('Error: provide a valid image type (flux, mean, median)')
         return
              
-    image[image==0]=np.nan
+    image[image==0]=np.nan #to fill with np.nan the outer regions of the field
     #----------------------------------------------------------------------- 
     
     
@@ -160,11 +164,17 @@ def Make_Im_SHINE(cube, labelsCube=None, Id=[-1], extcub=0, extlabels=0, itype='
                         headout[key] = hduhead['CD2_2']
         
         if itype == 'flux':
-            headout['BUNIT'] = '1e-18 erg cm^-2 s^-1 arcsec^-2'
+            if not isvar:
+                headout['BUNIT'] = '1e-18 erg cm^-2 s^-1 arcsec^-2'
+            else:
+                headout['BUNIT'] = '(1e-18 erg cm^-2 s^-1 arcsec^-2)^2'
         else:
-            headout['BUNIT'] = '1e-20 erg cm^-2 s^-1 Angstrom^-1'
+            if not isvar:
+                headout['BUNIT'] = '1e-20 erg cm^-2 s^-1 Angstrom^-1'
+            else:
+                headout['BUNIT'] = '(1e-20 erg cm^-2 s^-1 Angstrom^-1)^2'
         
-        headout['HISTORY'] = f'2D image using Make_Im_SHINE with method {itype}'
+        headout['HISTORY'] = f'2D image using Make_Im_SHINE with method {itype} and isvar {isvar}'
         
         #Paste the header and save
         hduout_img.header = headout
