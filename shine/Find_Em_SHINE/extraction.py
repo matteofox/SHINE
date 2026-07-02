@@ -163,6 +163,9 @@ def extract(fcube, fvar, extdata=0, extvar=0,
     print(f'  Edge mask      : {maskspedge} pix')
     print(f'  Output dir     : {outdir}')
 
+    if do_continuum_sub:
+        print(f"Using continuum-subtracted cube for extraction saved in {fcube_for_extraction}.")
+        
     runextraction(
         fcube_for_extraction,
         fvar,
