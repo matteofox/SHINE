@@ -420,10 +420,6 @@ cutouts and spectra.
 .. code-block:: python
 
    from shine.Find_Em_SHINE import build_em_catalog
-   import numpy as np
-
-   # Load the covariance fit coefficients
-   cov_poly = np.loadtxt('./covariance/covariance_1Dfit.txt')
 
    catalog = build_em_catalog(
        fcube       = products['fcube_filtered'],
@@ -431,14 +427,9 @@ cutouts and spectra.
        fsegmap     = products['fsegmap'],
        catpath     = products['fcatalogue'],
        outdir      = './emitters/',
-       cov_poly    = cov_poly,
-       target_z    = 3.1,
-       rest_line   = 1216.0,
-       vel_cut     = 2000,          # km/s
+       cov_dir     = './covariance/',  
        SNcut       = (7, 5),
        checkimg    = True,
-       padding     = 50,
-       pixel_scale = 0.2,
    )
 
 **Main steps performed:**
@@ -462,6 +453,7 @@ cutouts and spectra.
 - ``catpath``: Path to the SHINE output catalogue (``*CATALOGUE_out.fits``).
 - ``outdir`` *(default './')*: Output directory.
 - ``cov_poly`` *(default None)*: Covariance correction model. Accepts a 1-D array (single polynomial in aperture size) or a 2-D array (per-wavelength polynomial, as written by ``covariance``). If ``None``, no correction is applied.
+- ``cov_dir`` *(default None)*: Path to the covariance estimation directory. If provided and ``cov_poly`` is ``None``, the 1-D polynomial fit coefficients are automatically loaded from ``{cov_dir}/covariance_1Dfit.txt``.
 - ``target_z``, ``rest_line`` *(default None)*: Target redshift and rest-frame line wavelength for velocity-offset computation.
 - ``vel_cut`` *(default None)*: Remove sources with ``|veloffset| > vel_cut`` (km/s).
 - ``SNcut`` *(default (7, 5))*: S/N thresholds for confidence class assignment (highest first).
@@ -522,15 +514,13 @@ pipeline from Python:
    )
 
    # ---- Step 3: Build catalogue ----
-   cov_poly = np.loadtxt('./covariance/covariance_1Dfit.txt')
-
    catalog = shine.Find_Em_SHINE.build_em_catalog(
        fcube     = products['fcube_filtered'],
        fcube_var = products['fvar_filtered'],
        fsegmap   = products['fsegmap'],
        catpath   = products['fcatalogue'],
        outdir    = './emitters/',
-       cov_poly  = cov_poly,
+       cov_dir   = './covariance/',   # automatically loads covariance_1Dfit.txt
        target_z  = 3.1,
        rest_line = 1216.0,
        vel_cut   = 2000,

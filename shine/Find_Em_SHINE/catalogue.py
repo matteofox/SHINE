@@ -394,6 +394,7 @@ def build_emitter_catalogue(
     catpath,
     outdir='./',
     cov_poly=None,
+    cov_dir=None,
     target_z=None,
     rest_line=None,
     vel_cut=None,
@@ -456,6 +457,10 @@ def build_emitter_catalogue(
           written by :func:`estimate_empirical_covariance`.
 
         If *None*, a correction of 1 (no correction) is applied.
+    cov_dir : str or None, optional
+        Path to the covariance estimation directory. If provided and ``cov_poly``
+        is ``None``, the 1-D polynomial fit coefficients are automatically loaded
+        from ``{cov_dir}/covariance_1Dfit.txt``. Default is ``None``.
     target_z : float or None, optional
         Target redshift for velocity-offset computation. Requires
         ``rest_line``.
@@ -566,8 +571,21 @@ def build_emitter_catalogue(
         # ------------------------------------------------------------------
         # Covariance correction vector
         # ------------------------------------------------------------------
+        if cov_poly is None and cov_dir is not None:
+            fitcoeffs_path = os.path.join(cov_dir, 'covariance_1Dfit.txt')
+            if os.path.isfile(fitcoeffs_path):
+                print(f'Loading covariance polynomial fit from: {fitcoeffs_path}')
+                cov_poly = np.loadtxt(fitcoeffs_path)
+            else:
+                warnings.warn(
+                    f'cov_dir was provided, but covariance_1Dfit.txt '
+                    f'was not found in {cov_dir}. Proceeding with no covariance correction.',
+                    UserWarning
+                )
+
         if cov_poly is None:
             covariance = np.ones(n, dtype=float)
+
 
         elif np.ndim(cov_poly) == 1:
             # Single polynomial in projected size (arcsec)
