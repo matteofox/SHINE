@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 # AUTHORS: MF, DT
-# VERSION: 1.1
+# VERSION: 2.0
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,6 +20,8 @@ from astropy.convolution import convolve, convolve_fft
 from astropy.stats import sigma_clipped_stats
 
 from pathlib import Path
+
+
 
 import argparse, textwrap
 
@@ -259,6 +261,8 @@ def masking(data, mask):
 
 def masking_nan(data, mask):
     print('... Masking the data with nans')
+
+    # TO DO: check shape of the mask and expand it in case it's 2D
     
     naxis = len(np.shape(data))
     if naxis==2:
@@ -596,39 +600,6 @@ def compute_var(data):
     vardata = (np.full_like(data, std))**2
 
     return vardata
-
-
- 
-def clean_clube(data, filtsize=7, rebinfac=40):
-    
-    nz, ny, nx = np.shape(data)
-
-    data = np.ma.array(data, mask=np.isnan(data))
-    
-    zrebin = int(np.ceil(nz/rebinfac))
-    
-    contcube = np.zeros((zrebin, ny, nx))
-
-    print(f'... Rebinning the cube')
-    for ii in np.arange(zrebin):
-        print(f'Slice: {ii}')
-        zmin = rebinfac*ii
-        zmax = min(nz, rebinfac*(ii+1))
-        mean, median, std = sigma_clipped_stats(data[zmin:zmax,:,:], sigma = 3, axis=0, maxiters=3)   
-        contcube[ii] = median
-
-    print(f'... Filtering the rebinned cube')
-    filtcube = median_filter(contcube, size=filtsize, axes=0)
-
-    print(f'... Subtract the filtered cube')
-    for ii in np.arange(zrebin):    
-       
-        zmin = rebinfac*ii
-        zmax = min(nz, rebinfac*(ii+1))
-        data[zmin:zmax,:,:] -= filtcube[ii]
-    
-    return data     
-
 
 
 def runextraction(data, vardata, mask2d=None, mask2dpost=None, fmask3D=None, extdata=0, extvardata=0, \

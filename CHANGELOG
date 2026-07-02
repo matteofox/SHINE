@@ -1,3 +1,11 @@
+2.0.0 - 02-07-2026
+-------------------
+  - Restructured SHINE package into a modular sub-package architecture.
+  - Added Find_Em_SHINE sub-package for the line-emitter extraction and cataloguing pipeline (extract, covariance, build_em_catalog).
+  - Moved Make_Im_SHINE into its own sub-package for better modularity.
+  - Simplified shine_utils.py to only contain clean_clube (general utility).
+  - Updated documentation to reflect the new structure.
+
 1.1.0 - 20-01-2025
 -------------------
 - New version fully adapted for 2D image extraction with new features.
