@@ -7,7 +7,6 @@
 # ---------------------------
 # Final emitter catalogue construction, S/N correction, source images,
 # and spectral extraction.
-# Moved from shine_utils.py as part of the Find_Em_SHINE sub-package.
 
 import os
 import warnings

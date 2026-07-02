@@ -6,7 +6,6 @@
 # Find_Em_SHINE/covariance.py
 # ----------------------------
 # Empirical noise-covariance estimation for spectroscopic cubes.
-# Moved from shine_utils.py as part of the Find_Em_SHINE sub-package.
 
 import os
 import warnings

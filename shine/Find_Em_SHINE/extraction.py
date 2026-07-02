@@ -20,9 +20,9 @@ from ..shine_utils import clean_clube
 
 def extract(fcube, fvar, extdata=0, extvar=0,
             mask2d=None, mask2dpost=None,
-            snthreshold=2.0, spatsmooth=2.0, specsmooth=0.0,
+            snthreshold=3.0, spatsmooth=2.0, specsmooth=0.0,
             connectivity=26, maskspedge=20,
-            mindz=1, maxdz=200, minvox=1, minarea=1,
+            mindz=3, maxdz=50, minvox=27, minarea=9,
             zmin=None, zmax=None, lmin=None, lmax=None,
             outdir='./',
             do_continuum_sub=False, rebinfac=40, filtsize=7):
