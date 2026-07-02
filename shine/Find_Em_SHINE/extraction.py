@@ -140,8 +140,11 @@ def extract(fcube, fvar, extdata=0, extvar=0,
         print(f'  Saved continuum-subtracted cube to: {fcube_clean}')
 
         fcube_for_extraction = fcube_clean
+        extdata_for_extraction = 0
     else:
         fcube_for_extraction = fcube
+        extdata_for_extraction = extdata
+
 
     # ------------------------------------------------------------------
     # SHINE extraction
@@ -163,7 +166,7 @@ def extract(fcube, fvar, extdata=0, extvar=0,
     runextraction(
         fcube_for_extraction,
         fvar,
-        extdata=extdata,
+        extdata=extdata_for_extraction,
         extvardata=extvar,
         mask2d=mask2d,
         mask2dpost=mask2dpost,
