@@ -307,7 +307,7 @@ def estimate_empirical_covariance(fcube, fvar, outdir, extcube=0, extvar=0, alls
         savenormstd[ii, :] = normallstd_seg
         savestd[ii, :]     = allstd_seg
 
-        if verbose and (ii % max(1, nsegments // 10) == 0):
+        if verbose and (ii % max(1, nsegments // 500) == 0):
             print(f'  Segment {ii + 1}/{nsegments} '
                   f'(λ = {wmin:.1f}–{wmax:.1f} Å)')
 
