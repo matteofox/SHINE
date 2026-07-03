@@ -543,12 +543,12 @@ def build_emitter_catalogue(
     os.makedirs(outdir, exist_ok=True)
 
     if fcube_for_spectra is None:
-        warnings.warn(
-            "fcube_for_spectra is None. 1-D spectra extraction will be SKIPPED. "
-            "To extract 1-D spectra for each source, please provide the path to the "
-            "unfiltered data cube via fcube_for_spectra.",
-            UserWarning
-        )
+        print("\n" + "!" * 80)
+        print("! WARNING: 'fcube_for_spectra' is None.")
+        print("! 1-D spectra extraction will be SKIPPED.")
+        print("! To extract 1-D spectra for each source, please provide the path")
+        print("! to the original/unfiltered data cube via 'fcube_for_spectra'.")
+        print("!" * 80 + "\n")
 
     # ------------------------------------------------------------------
     # Load or recompute catalogue with derived quantities
