@@ -18,7 +18,7 @@ from ..SHINE import runextraction
 from ..shine_utils import clean_clube
 
 
-def extract(fcube, fvar, extdata=0, extvar=0,
+def extract(fcube_input, fvar_input, extdata=0, extvar=0,
             mask2d=None, mask2dpost=None,
             snthreshold=3.0, spatsmooth=2.0, specsmooth=0.0,
             connectivity=26, maskspedge=0,
@@ -39,9 +39,9 @@ def extract(fcube, fvar, extdata=0, extvar=0,
 
     Parameters
     ----------
-    fcube : str
+    fcube_input : str
         Path to the science data cube FITS file.
-    fvar : str
+    fvar_input : str
         Path to the variance cube FITS file, or a numeric string /
         ``'-1'`` (see :func:`shine.SHINE.runextraction`).
     extdata : int, optional
@@ -112,8 +112,8 @@ def extract(fcube, fvar, extdata=0, extvar=0,
     """
     os.makedirs(outdir, exist_ok=True)
 
-    cube_stem = Path(fcube).stem
-    var_stem  = Path(fvar).stem
+    cube_stem = Path(fcube_input).stem
+    var_stem  = Path(fvar_input).stem
 
     # ------------------------------------------------------------------
     # Optional continuum subtraction
@@ -124,7 +124,7 @@ def extract(fcube, fvar, extdata=0, extvar=0,
         print('Continuum subtraction (clean_clube)')
         print('=' * 60)
 
-        hducube = fits.open(fcube)
+        hducube = fits.open(fcube_input)
         cube    = hducube[extdata].data
         header  = hducube[extdata].header
         hducube.close()
@@ -142,7 +142,7 @@ def extract(fcube, fvar, extdata=0, extvar=0,
         fcube_for_extraction = fcube_clean
         extdata_for_extraction = 0
     else:
-        fcube_for_extraction = fcube
+        fcube_for_extraction = fcube_input
         extdata_for_extraction = extdata
 
 
@@ -168,7 +168,7 @@ def extract(fcube, fvar, extdata=0, extvar=0,
 
     runextraction(
         fcube_for_extraction,
-        fvar,
+        fvar_input,
         extdata=extdata_for_extraction,
         extvardata=extvar,
         mask2d=mask2d,

@@ -17,9 +17,10 @@ import warnings
 import numpy as np
 from scipy.ndimage import median_filter
 
-from astropy.stats import sigma_clipped_stats
+from astropy.stats import sigma_clipped_stats, sigma_clip
 from astropy.io import fits
 from astropy.convolution import convolve, convolve_fft, Gaussian2DKernel, CustomKernel, interpolate_replace_nans
+import concurrent.futures
 from pathlib import Path
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -66,13 +67,21 @@ def clean_clube(data, filtsize=7, rebinfac=40):
 
     print(f'... Rebinning the cube into {zrebin} continuum slices '
           f'(rebinfac={rebinfac})')
-    for ii in np.arange(zrebin):
+          
+    def _process_slice(ii):
         zmin = rebinfac * ii
         zmax = min(nz, rebinfac * (ii + 1))
-        _, median, _ = sigma_clipped_stats(
-            data[zmin:zmax, :, :], sigma=3, axis=0, maxiters=3
-        )
-        contcube[ii] = median
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            clipped = sigma_clip(data[zmin:zmax, :, :], sigma=3, maxiters=3, axis=0)
+            filled = clipped.filled(np.nan)
+            return ii, np.nanmedian(filled, axis=0)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(_process_slice, ii) for ii in range(zrebin)]
+        for future in concurrent.futures.as_completed(futures):
+            ii, median = future.result()
+            contcube[ii] = median
 
     print(f'... Filtering the continuum cube with a spectral median filter '
           f'(filtsize={filtsize})')
@@ -90,6 +99,17 @@ def clean_clube(data, filtsize=7, rebinfac=40):
 # =============================================================================
 # 2.  filter_cube — spatial and spectral smoothing
 # =============================================================================
+
+def _process_interpolate_nans(args):
+    i, data_slice, kern = args
+    return i, interpolate_replace_nans(data_slice, kern)
+
+def _process_convolve(args):
+    i, data_slice, kern, normalize, nan_treatment, usefft = args
+    if usefft:
+        return i, convolve_fft(data_slice, kern, normalize_kernel=normalize, nan_treatment=nan_treatment, allow_huge=True)
+    else:
+        return i, convolve(data_slice, kern, normalize_kernel=normalize, nan_treatment=nan_treatment)
 
 def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
     """Apply a 2-D or 3-D Gaussian smoothing kernel to a data cube or variance.
@@ -163,8 +183,12 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
                 # Interpolate NaNs with ad-hoc kernel
                 print('... Interpolating NaNs in Variance Data')
                 tmpkern = Gaussian2DKernel(xsig, ysig, x_size=int(6 * xsig + 1), y_size=int(6 * ysig + 1))
-                for i in np.arange(cubsize[0]):
-                    cube[i, ...] = interpolate_replace_nans(cube[i, ...], tmpkern)
+                with concurrent.futures.ProcessPoolExecutor() as executor:
+                    args_list = [(i, cube[i, ...], tmpkern) for i in np.arange(cubsize[0])]
+                    futures = [executor.submit(_process_interpolate_nans, args) for args in args_list]
+                    for future in concurrent.futures.as_completed(futures):
+                        i, result = future.result()
+                        cube[i, ...] = result
             else:
                 label = 'data'
                 normalize = True
@@ -172,11 +196,12 @@ def filter_cube(cube, spatsmooth=2, specsig=0, isvar=False, usefftconv=False):
     
             print('... Filtering the {} using XY-axis gaussian kernel of size xsig={}, ysig={} pix'.format(label, xsig, ysig))
     
-            for i in np.arange(cubsize[0]):
-                if usefftconv:
-                    SMcube[i, ...] = convolve_fft(cube[i, ...], spatkern, normalize_kernel=normalize,  nan_treatment=nan_treatment, allow_huge=True)
-                else:
-                    SMcube[i, ...] = convolve(cube[i, ...], spatkern, normalize_kernel=normalize, nan_treatment=nan_treatment)
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                args_list = [(i, cube[i, ...], spatkern, normalize, nan_treatment, usefftconv) for i in np.arange(cubsize[0])]
+                futures = [executor.submit(_process_convolve, args) for args in args_list]
+                for future in concurrent.futures.as_completed(futures):
+                    i, result = future.result()
+                    SMcube[i, ...] = result
                     
         elif specsig > 0. and naxis==3:
 

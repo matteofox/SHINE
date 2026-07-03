@@ -389,8 +389,8 @@ def make_source_images(cubelist, segcube, header, catentry, Id, outdir,
 # =============================================================================
 
 def build_emitter_catalogue(
-    fcube,
-    fcube_var,
+    fcube_for_extraction,
+    fvar_for_extraction,
     fsegmap,
     catpath,
     outdir='./',
@@ -405,7 +405,7 @@ def build_emitter_catalogue(
     fcube_median_var=None,
     fcube_odd_var=None,
     fcube_even_var=None,
-    fcube_orig=None,
+    fcube_for_spectra=None,
     fsource_img=None,
     marzred=None,
     SNcut=(7, 5),
@@ -434,13 +434,13 @@ def build_emitter_catalogue(
     5. Generates per-source image cutouts (requires ``checkimg=True``).
     6. Optionally extracts 1-D spectra via the ``mypython.ifu.muse_utils``
        ``cube2spec`` routine if the ``mypython`` package is available and
-       ``fcube_orig`` is provided.
+       ``fcube_for_spectra`` is provided.
 
     Parameters
     ----------
-    fcube : str
+    fcube_for_extraction : str
         Path to the filtered data cube (``*FILTER_out.fits`` from SHINE).
-    fcube_var : str
+    fvar_for_extraction : str
         Path to the filtered variance cube.
     fsegmap : str
         Path to the SHINE segmentation map (``*LABELS_out.fits``).
@@ -482,7 +482,7 @@ def build_emitter_catalogue(
         Variance for the odd cube.
     fcube_even_var : str or None, optional
         Variance for the even cube.
-    fcube_orig : str or None, optional
+    fcube_for_spectra : str or None, optional
         Path to the *unfiltered* data cube. If provided and ``mypython`` is
         installed, 1-D spectra are extracted for each source.
     fsource_img : str or None, optional
@@ -541,6 +541,14 @@ def build_emitter_catalogue(
     )
 
     os.makedirs(outdir, exist_ok=True)
+
+    if fcube_for_spectra is None:
+        warnings.warn(
+            "fcube_for_spectra is None. 1-D spectra extraction will be SKIPPED. "
+            "To extract 1-D spectra for each source, please provide the path to the "
+            "unfiltered data cube via fcube_for_spectra.",
+            UserWarning
+        )
 
     # ------------------------------------------------------------------
     # Load or recompute catalogue with derived quantities
@@ -632,7 +640,7 @@ def build_emitter_catalogue(
             return data
 
         print('Reading cubes …')
-        cubehdu = fits.open(fcube)
+        cubehdu = fits.open(fcube_for_extraction)
         try:
             cube    = cubehdu[1].data
             cubehdr = cubehdu[1].header
@@ -640,7 +648,7 @@ def build_emitter_catalogue(
             cube    = cubehdu[0].data
             cubehdr = cubehdu[0].header
 
-        cube_var    = _open_cube(fcube_var,    'filtered variance')
+        cube_var    = _open_cube(fvar_for_extraction,    'filtered variance')
         segmap      = fits.open(fsegmap)[0].data
         cube_odd    = _open_cube(fcube_odd,    'odd cube')
         cube_odd_v  = _open_cube(fcube_odd_var, 'odd variance')
@@ -789,7 +797,7 @@ def build_emitter_catalogue(
         os.makedirs(objs_dir, exist_ok=True)
 
         # Re-open cubes needed for image generation
-        cubehdu = fits.open(fcube)
+        cubehdu = fits.open(fcube_for_extraction)
         try:
             cube    = cubehdu[1].data
             cubehdr = cubehdu[1].header
@@ -822,7 +830,7 @@ def build_emitter_catalogue(
         total = len(catalog)
         step  = max(total // 10, 1)
 
-        if fcube_orig is not None:
+        if fcube_for_spectra is not None:
             print(f'\nExtracting images and spectra for {total} sources')
         else:
             print(f'\nExtracting images for {total} sources')
@@ -842,7 +850,7 @@ def build_emitter_catalogue(
 
                 img_ok  = (os.path.isfile(img_file)
                            and os.path.getsize(img_file) > 0)
-                spec_ok = (fcube_orig is None
+                spec_ok = (fcube_for_spectra is None
                            or (os.path.isfile(spec_file)
                                and os.path.getsize(spec_file) > 0))
 
@@ -864,16 +872,16 @@ def build_emitter_catalogue(
             )
 
             # Spectral extraction via mypython.cube2spec
-            if fcube_orig is not None:
+            if fcube_for_spectra is not None:
                 if _utl is None:
                     raise ImportError(
                         'mypython is required for spectral extraction. '
                         'Install it with "pip install mypython" or set '
-                        'fcube_orig=None to skip spectral extraction.'
+                        'fcube_for_spectra=None to skip spectral extraction.'
                     )
                 savename = os.path.join(objdir, 'spectrum.fits')
                 _utl.cube2spec(
-                    fcube_orig, 0.0, 0.0, 0.0,
+                    fcube_for_spectra, 0.0, 0.0, 0.0,
                     shape='mask', helio=0, mask=segmap,
                     twod=True, tovac=True, write=savename,
                     idsource=objid,

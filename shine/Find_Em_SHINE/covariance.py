@@ -33,8 +33,8 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 # estimate_empirical_covariance
 # =============================================================================
 
-def estimate_empirical_covariance(fcube, fvar, outdir, extcube=0, extvar=0, allsizes=None, nsegments=500, dl=4, nsamples=10000, max_attempts=100000, 
-    mask_source=None, mask_edge=None, pixel_scale=0.2, fitdeg=2, plot=True, verbose=True, sampling=True, random_seed=None):
+def estimate_empirical_covariance(fcube_for_extraction, fvar_for_extraction, outdir, extcube=0, extvar=0, allsizes=None, nsegments=500, dl=4, nsamples=10000, max_attempts=100000, 
+    mask_source=None, mask_edge=None, pixel_scale=0.2, fitdeg=2, plot=True, verbose=True, sampling=True, random_seed=0):
     
     """Estimate the empirical noise covariance of a MUSE-like spectroscopic cube.
 
@@ -50,10 +50,10 @@ def estimate_empirical_covariance(fcube, fvar, outdir, extcube=0, extvar=0, alls
 
     Parameters
     ----------
-    fcube : str
+    fcube_for_extraction : str
         Path to the FITS file containing the filtered data cube (ideally the
         ``*FILTER_out.fits`` product written by ``SHINE --writesmdata``).
-    fvar : str
+    fvar_for_extraction : str
         Path to the FITS file containing the filtered variance cube (ideally
         the ``*FILTER_out.fits`` product written by ``SHINE --writesmvar``).
     outdir : str
@@ -112,8 +112,7 @@ def estimate_empirical_covariance(fcube, fvar, outdir, extcube=0, extvar=0, alls
         sampling phase.
     random_seed : int or None, optional
         If set, fix the NumPy random seed before the sampling loop so that
-        results are exactly reproducible across runs.  Default is *None*
-        (non-deterministic).
+        results are exactly reproducible across runs.  Default is 0.
 
     Returns
     -------
@@ -199,14 +198,14 @@ def estimate_empirical_covariance(fcube, fvar, outdir, extcube=0, extvar=0, alls
         # Open cubes
         # ------------------------------------------------------------------
         if verbose:
-            print(f'Opening data cube: {fcube}')
-        hducube = fits.open(fcube, memmap=False)
+            print(f'Opening data cube: {fcube_for_extraction}')
+        hducube = fits.open(fcube_for_extraction, memmap=False)
         cube    = hducube[extcube].data
         header  = hducube[extcube].header
 
         if verbose:
-            print(f'Opening variance cube: {fvar}')
-        hduvar  = fits.open(fvar, memmap=False)
+            print(f'Opening variance cube: {fvar_for_extraction}')
+        hduvar  = fits.open(fvar_for_extraction, memmap=False)
         vardata = hduvar[extvar].data
 
         nw, ny, nx = cube.shape

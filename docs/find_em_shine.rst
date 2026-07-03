@@ -1,5 +1,5 @@
 Line-Emitter Pipeline (``Find_Em_SHINE``)
-========================================
+=========================================
 
 ``Find_Em_SHINE`` provides a three-step modular pipeline for extracting and
 cataloguing line emitters from spectroscopic cubes. Each step can be called
@@ -73,8 +73,8 @@ for line-emitter detection. It:
 
 **Parameters:**
 
-- ``fcube``: Path to the science data cube FITS file.
-- ``fvar``: Path to the variance cube FITS file, or a numeric string / ``'-1'``.
+- ``fcube_input``: Path to the science data cube FITS file.
+- ``fvar_input``: Path to the variance cube FITS file, or a numeric string / ``'-1'``.
 - ``extdata``, ``extvar`` *(default 0)*: HDU extension indices.
 - ``mask2d``, ``mask2dpost`` *(default None)*: Paths to pre/post-smoothing 2-D masks (1 = bad).
 - ``snthreshold`` *(default 2.0)*: S/N threshold for voxel inclusion.
@@ -110,23 +110,23 @@ polynomial model that can later be used to correct the S/N of extracted sources.
    from shine.Find_Em_SHINE import covariance
 
    covmap, sseg, wseg, fitres = covariance(
-       fcube       = products['fcube_filtered'],
-       fvar        = products['fvar_filtered'],
-       outdir      = './covariance/',
-       mask_source = products['fsegmap'],     # optional
-       nsegments   = 500,
-       allsizes    = list(range(2, 31)),
-       dl          = 4,
-       nsamples    = 10000,
-       pixel_scale = 0.2,
-       fitdeg      = 2,
-       plot        = True,
+       fcube_for_extraction = products['fcube_filtered'],
+       fvar_for_extraction  = products['fvar_filtered'],
+       outdir               = './covariance/',
+       mask_source          = products['fsegmap'],     # optional
+       nsegments            = 500,
+       allsizes             = list(range(2, 31)),
+       dl                   = 4,
+       nsamples             = 10000,
+       pixel_scale          = 0.2,
+       fitdeg               = 2,
+       plot                 = True,
    )
 
 **Parameters:**
 
-- ``fcube``: Path to the filtered data cube (``*FILTER_out.fits`` from SHINE ``--writesmdata``).
-- ``fvar``: Path to the filtered variance cube (``*FILTER_out.fits`` from SHINE ``--writesmvar``).
+- ``fcube_for_extraction``: Path to the filtered data cube (``*FILTER_out.fits`` from SHINE ``--writesmdata``).
+- ``fvar_for_extraction``: Path to the filtered variance cube (``*FILTER_out.fits`` from SHINE ``--writesmvar``).
 - ``outdir``: Output directory (created automatically if absent).
 - ``extcube``, ``extvar`` *(default 0)*: HDU extension indices.
 - ``allsizes`` *(default range(2, 31))*: List of aperture sizes in pixels to probe.
@@ -163,14 +163,14 @@ cutouts and spectra.
    from shine.Find_Em_SHINE import build_em_catalog
 
    catalog = build_em_catalog(
-       fcube       = products['fcube_filtered'],
-       fcube_var   = products['fvar_filtered'],
-       fsegmap     = products['fsegmap'],
-       catpath     = products['fcatalogue'],
-       outdir      = './emitters/',
-       cov_dir     = './covariance/',  
-       SNcut       = (7, 5),
-       checkimg    = True,
+       fcube_for_extraction = products['fcube_filtered'],
+       fvar_for_extraction  = products['fvar_filtered'],
+       fsegmap              = products['fsegmap'],
+       catpath              = products['fcatalogue'],
+       outdir               = './emitters/',
+       cov_dir              = './covariance/',
+       SNcut                = (7, 5),
+       checkimg             = True,
    )
 
 **Main steps performed:**
@@ -183,13 +183,13 @@ cutouts and spectra.
 5. Applies S/N and quality cuts and assigns confidence classes.
 6. Writes ``{catname}_all_SNR.fits`` and ``{catname}_select_SNR.fits``.
 7. If ``checkimg=True``, generates per-source image cutouts.
-8. If ``fcube_orig`` is provided and ``mypython`` is installed, extracts
+8. If ``fcube_for_spectra`` is provided and ``mypython`` is installed, extracts
    1-D spectra for each source.
 
 **Parameters:**
 
-- ``fcube``: Path to the filtered data cube.
-- ``fcube_var``: Path to the filtered variance cube.
+- ``fcube_for_extraction``: Path to the filtered data cube.
+- ``fvar_for_extraction``: Path to the filtered variance cube.
 - ``fsegmap``: Path to the SHINE segmentation map (``*LABELS_out.fits``).
 - ``catpath``: Path to the SHINE output catalogue (``*CATALOGUE_out.fits``).
 - ``outdir`` *(default './')*: Output directory.
@@ -209,7 +209,7 @@ cutouts and spectra.
 - ``pixel_scale`` *(default 0.2)*: Pixel scale in arcsec/pixel.
 - ``fcube_median``, ``fcube_odd``, ``fcube_even`` *(default None)*: Half-exposure cubes for quality checks.
 - ``fcube_median_var``, ``fcube_odd_var``, ``fcube_even_var`` *(default None)*: Associated variance cubes.
-- ``fcube_orig`` *(default None)*: Unsmoothed cube for 1-D spectral extraction (requires ``mypython``).
+- ``fcube_for_spectra`` *(default None)*: Unsmoothed cube for 1-D spectral extraction (requires ``mypython``).
 - ``fsource_img`` *(default None)*: 2-D continuum aperture map for overlap flagging.
 - ``marzred`` *(default None)*: Marz-format redshift catalogue for continuum sources.
 
@@ -235,7 +235,7 @@ pipeline from Python:
 
    # ---- Step 1: Extract ----
    products = shine.Find_Em_SHINE.extract(
-       'Datacube.fits', 'Varcube.fits',
+       fcube_input='Datacube.fits', fvar_input='Varcube.fits',
        snthreshold=2.0, spatsmooth=2.0,
        connectivity=26, maskspedge=20,
        mindz=1, maxdz=200, minvox=1, minarea=1,
@@ -245,28 +245,28 @@ pipeline from Python:
 
    # ---- Step 2: Covariance ----
    covmap, sseg, wseg, fitres = shine.Find_Em_SHINE.covariance(
-       fcube       = products['fcube_filtered'],
-       fvar        = products['fvar_filtered'],
-       outdir      = './covariance/',
-       mask_source = products['fsegmap'],
-       nsegments   = 500,
-       pixel_scale = 0.2,
+       fcube_for_extraction = products['fcube_filtered'],
+       fvar_for_extraction  = products['fvar_filtered'],
+       outdir               = './covariance/',
+       mask_source          = products['fsegmap'],
+       nsegments            = 500,
+       pixel_scale          = 0.2,
    )
 
    # ---- Step 3: Build catalogue ----
    catalog = shine.Find_Em_SHINE.build_em_catalog(
-       fcube     = products['fcube_filtered'],
-       fcube_var = products['fvar_filtered'],
-       fsegmap   = products['fsegmap'],
-       catpath   = products['fcatalogue'],
-       outdir    = './emitters/',
-       cov_dir   = './covariance/',   # automatically loads covariance_1Dfit.txt
-       target_z  = 3.1,
-       rest_line = 1216.0,
-       vel_cut   = 2000,
-       SNcut     = (7, 5),
-       checkimg  = True,
-       padding   = 50,
+       fcube_for_extraction = products['fcube_filtered'],
+       fvar_for_extraction  = products['fvar_filtered'],
+       fsegmap              = products['fsegmap'],
+       catpath              = products['fcatalogue'],
+       outdir               = './emitters/',
+       cov_dir              = './covariance/',   # automatically loads covariance_1Dfit.txt
+       target_z             = 3.1,
+       rest_line            = 1216.0,
+       vel_cut              = 2000,
+       SNcut                = (7, 5),
+       checkimg             = True,
+       padding              = 50,
    )
 
    print(f'Final catalogue: {len(catalog)} sources')

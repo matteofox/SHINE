@@ -56,7 +56,7 @@ filtsize = 7
 
 [EXTRACTION]
 ; S/N threshold for voxel inclusion
-snthreshold = 2.0
+snthreshold = 3.0
 ; Spatial Gaussian smoothing kernel sigma (pixels)
 spatsmooth = 2.0
 ; Spectral Gaussian smoothing kernel sigma (pixels)
@@ -64,15 +64,15 @@ specsmooth = 0.0
 ; Voxel connectivity scheme (6, 18, or 26)
 connectivity = 26
 ; Pixels to mask around the field edges
-maskspedge = 20
+maskspedge = 0
 ; Minimum spectral extent (layers) per source
-mindz = 1
+mindz = 3
 ; Maximum spectral extent (layers) per source
-maxdz = 200
+maxdz = 50
 ; Minimum total connected voxels per source
-minvox = 1
+minvox = 27
 ; Minimum projected spatial area (pixels) per source
-minarea = 1
+minarea = 9
 ; Layer index range selection (e.g. zmin=40, zmax=100) or None
 zmin = None
 zmax = None
@@ -123,7 +123,8 @@ fcube_median_var = None
 fcube_odd_var = None
 fcube_even_var = None
 ; Path to the unsmoothed data cube for 1-D spectrum extraction (requires mypython)
-fcube_orig = None
+; Defaults to the input cube (fcube) if do_continuum_sub=True and this is None.
+fcube_for_spectra = None
 ; Path to a 2-D continuum source mask for overlap flagging
 fsource_img = None
 ; Path to a Marz-format redshift catalogue for continuum sources
@@ -298,7 +299,14 @@ def main():
     fcube_median_var = _parse_val(config.get('CATALOGUE', 'fcube_median_var', fallback=None), str)
     fcube_odd_var    = _parse_val(config.get('CATALOGUE', 'fcube_odd_var', fallback=None), str)
     fcube_even_var   = _parse_val(config.get('CATALOGUE', 'fcube_even_var', fallback=None), str)
-    fcube_orig       = _parse_val(config.get('CATALOGUE', 'fcube_orig', fallback=None), str)
+    fcube_for_spectra = _parse_val(config.get('CATALOGUE', 'fcube_for_spectra', fallback=None), str)
+    if fcube_for_spectra is None:
+        # Fallback to fcube_orig for backward compatibility
+        fcube_for_spectra = _parse_val(config.get('CATALOGUE', 'fcube_orig', fallback=None), str)
+
+    if fcube_for_spectra is None and do_continuum_sub:
+        fcube_for_spectra = fcube
+
     fsource_img      = _parse_val(config.get('CATALOGUE', 'fsource_img', fallback=None), str)
     marzred          = _parse_val(config.get('CATALOGUE', 'marzred', fallback=None), str)
     delta_eo_sncut   = _parse_val(config.get('CATALOGUE', 'delta_eo_sncut', fallback='0.5,0.5'), 'tuple_float')
@@ -309,8 +317,8 @@ def main():
     # STEP 1 — Extraction
     # =========================================================================
     products = extract(
-        fcube=fcube,
-        fvar=fvar,
+        fcube_input=fcube,
+        fvar_input=fvar,
         extdata=extdata,
         extvar=extvar,
         mask2d=mask2d,
@@ -369,8 +377,8 @@ def main():
     print('=' * 60)
 
     final_cat = build_em_catalog(
-        fcube=products['fcube_filtered'],
-        fcube_var=products['fvar_filtered'],
+        fcube_for_extraction=products['fcube_filtered'],
+        fvar_for_extraction=products['fvar_filtered'],
         fsegmap=products['fsegmap'],
         catpath=products['fcatalogue'],
         outdir=outdir_catalogue,
@@ -384,7 +392,7 @@ def main():
         fcube_median_var=fcube_median_var,
         fcube_odd_var=fcube_odd_var,
         fcube_even_var=fcube_even_var,
-        fcube_orig=fcube_orig,
+        fcube_for_spectra=fcube_for_spectra,
         fsource_img=fsource_img,
         marzred=marzred,
         SNcut=sncut,
