@@ -9,6 +9,7 @@
 # and spectral extraction.
 
 import os
+import shutil
 import warnings
 from pathlib import Path
 
@@ -830,9 +831,30 @@ def build_emitter_catalogue(
             objid  = catalog['ID'][ii]
             objdir = os.path.join(objs_dir, f'id{objid}')
 
+            # --- Completeness check for restart safety ---
+            # Verify that all expected output files exist and are
+            # non-empty.  If the previous run was interrupted mid-source
+            # (e.g., image written but spectrum missing, or a file is
+            # truncated/empty), we clean up and re-process.
             if os.path.isdir(objdir):
-                print(f'Output for id{objid} already exists — skipping.')
-                continue
+                img_file  = os.path.join(objdir, f'id{objid}_img.fits')
+                spec_file = os.path.join(objdir, 'spectrum.fits')
+
+                img_ok  = (os.path.isfile(img_file)
+                           and os.path.getsize(img_file) > 0)
+                spec_ok = (fcube_orig is None
+                           or (os.path.isfile(spec_file)
+                               and os.path.getsize(spec_file) > 0))
+
+                if img_ok and spec_ok:
+                    # All products present — skip this source
+                    continue
+
+                # Incomplete: remove stale files and re-process
+                print(f'Incomplete output for id{objid} — '
+                      f're-processing (img={img_ok}, spec={spec_ok}).')
+
+                shutil.rmtree(objdir)
 
             os.makedirs(objdir, exist_ok=True)
 

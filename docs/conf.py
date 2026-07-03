@@ -22,10 +22,14 @@ release = '1.1'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx.ext.graphviz',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx_rtd_theme'
 ]
+
+# Render graphviz diagrams as inline SVG for crisp scaling
+graphviz_output_format = 'svg'
 
 
 templates_path = ['_templates']

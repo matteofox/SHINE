@@ -21,6 +21,7 @@ Documentation of SHINE
    :caption: Contents:
 
    installation
+   architecture
    shine_core
    find_em_shine
    make_im_shine
