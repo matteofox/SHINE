@@ -1,0 +1,58 @@
+/* Image Lightbox/Zoom effect for SHINE documentation */
+
+.zoomable-img {
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+}
+
+.zoomable-img:hover {
+    opacity: 0.9;
+}
+
+/* Lightbox Modal */
+.shine-lightbox-modal {
+    display: none;
+    position: fixed;
+    z-index: 99999;
+    padding-top: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.85);
+    cursor: zoom-out;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Lightbox Content (Image) */
+.shine-lightbox-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 85%;
+    object-fit: contain;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    background-color: transparent;
+    transition: transform 0.25s ease;
+}
+
+/* Close Button */
+.shine-lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+}
+
+.shine-lightbox-close:hover,
+.shine-lightbox-close:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
+}
