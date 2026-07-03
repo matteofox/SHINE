@@ -28,6 +28,7 @@ setup(
         'console_scripts': [
             'SHINE = shine.SHINE:main',
             'Make_Im_SHINE = shine.Make_Im_SHINE.Make_Im_SHINE:main',
+            'Find_Em_SHINE = shine.Find_Em_SHINE.cli:main',
         ],
     },
 

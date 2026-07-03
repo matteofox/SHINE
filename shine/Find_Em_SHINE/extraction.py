@@ -21,7 +21,7 @@ from ..shine_utils import clean_clube
 def extract(fcube, fvar, extdata=0, extvar=0,
             mask2d=None, mask2dpost=None,
             snthreshold=3.0, spatsmooth=2.0, specsmooth=0.0,
-            connectivity=26, maskspedge=20,
+            connectivity=26, maskspedge=0,
             mindz=3, maxdz=50, minvox=27, minarea=9,
             zmin=None, zmax=None, lmin=None, lmax=None,
             outdir='./',
@@ -165,7 +165,7 @@ def extract(fcube, fvar, extdata=0, extvar=0,
 
     if do_continuum_sub:
         print(f"Using continuum-subtracted cube for extraction saved in {fcube_for_extraction}.")
-        
+
     runextraction(
         fcube_for_extraction,
         fvar,
@@ -191,7 +191,7 @@ def extract(fcube, fvar, extdata=0, extvar=0,
         writelabels=True,
         writesmdata=True,
         writesmvar=True,
-        writesmsnr=False,
+        writesmsnr=True,
         writesubcube=False,
         writevardata=False,
     )

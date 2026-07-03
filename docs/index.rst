@@ -290,6 +290,26 @@ independently, enabling fine-grained control over the workflow.
    catalog = shine.Find_Em_SHINE.build_em_catalog(...)
 
 
+Run Emitter Pipeline from the command line
+--------------------------------------------
+
+You can run the entire 3-step pipeline (extraction, covariance, and catalogue) with a single command from your terminal:
+
+.. code-block:: bash
+
+   Find_Em_SHINE <path/to/config.ini>
+
+**Initialize a template configuration file:**
+
+If you don't have a configuration file yet, you can generate a default template containing all parameters and helpful comments:
+
+.. code-block:: bash
+
+   Find_Em_SHINE --init-config my_config.ini
+
+Open the generated file, edit the paths and parameters under the sections ``[FILES]``, ``[CONTINUUM_SUBTRACTION]``, ``[EXTRACTION]``, ``[COVARIANCE]``, and ``[CATALOGUE]``, and run the pipeline.
+
+
 Step 1 — ``extract``: SHINE extraction for emitters
 ------------------------------------------------------
 
