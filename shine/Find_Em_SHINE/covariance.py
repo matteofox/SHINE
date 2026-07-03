@@ -265,6 +265,7 @@ def estimate_empirical_covariance(fcube, fvar, outdir, extcube=0, extvar=0, alls
         allstd_seg     = []
 
         for size in allsizes:
+            print(size)
             accept      = 0
             totrun      = 0
             normfluxlist = []
