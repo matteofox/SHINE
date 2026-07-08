@@ -80,8 +80,7 @@ def estimate_empirical_covariance(fcube_for_extraction, fvar_for_extraction, out
         Maximum number of random draws per (size, segment) combination before
         giving up. Default is 100 000.
     mask_source : str or None, optional
-        Path to a FITS file containing a 2-D source-detection map (e.g., the
-        ``*LABELS_out.fits`` output of a SHINE 2-D run). Non-zero pixels are
+        Path to a FITS file containing a 2-D source-detection map. Non-zero pixels are
         masked.  If *None* and ``sep`` is installed, sources are detected
         automatically using :mod:`sep`. If *None* and ``sep`` is not installed,
         only the edge mask is applied.
@@ -149,7 +148,6 @@ def estimate_empirical_covariance(fcube_for_extraction, fvar_for_extraction, out
     ...     fcube  = 'cube.FILTER_out.fits',
     ...     fvar   = 'varcube.FILTER_out.fits',
     ...     outdir = 'nsigma/',
-    ...     mask_source = 'cube.LABELS_out.fits',
     ...     nsegments   = 500,
     ...     plot        = True,
     ... )

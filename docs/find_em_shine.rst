@@ -113,7 +113,6 @@ polynomial model that can later be used to correct the S/N of extracted sources.
        fcube_for_extraction = products['fcube_filtered'],
        fvar_for_extraction  = products['fvar_filtered'],
        outdir               = './covariance/',
-       mask_source          = products['fsegmap'],     # optional
        nsegments            = 500,
        allsizes             = list(range(2, 31)),
        dl                   = 4,
@@ -134,7 +133,7 @@ polynomial model that can later be used to correct the S/N of extracted sources.
 - ``dl`` *(default 4)*: Spectral depth (layers) of each random aperture sample.
 - ``nsamples`` *(default 10 000)*: Valid samples to collect per (size, segment) combination.
 - ``max_attempts`` *(default 100 000)*: Maximum random draws before giving up on a combination.
-- ``mask_source`` *(default None)*: Path to a FITS source/continuum mask. If *None* and ``sep`` is installed, sources are detected automatically; otherwise only the edge mask is applied.
+- ``mask_source`` *(default None)*: Path to a 2D FITS source/continuum mask. If *None* and ``sep`` is installed, sources are detected automatically; otherwise only the edge mask is applied.
 - ``mask_edge`` *(default None)*: Path to a FITS edge mask. If *None*, derived automatically from NaN/zero pixels.
 - ``pixel_scale`` *(default 0.2)*: Pixel scale in arcsec/pixel (MUSE nominal).
 - ``fitdeg`` *(default 2)*: Degree of the polynomial fit to the covariance per wavelength segment.
